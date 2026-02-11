@@ -156,8 +156,27 @@
           Hover charts for tooltips. Use <b>Upload Excel Files</b> if your browser blocks local file fetching.
         </p>
       </div>
+
+      <div class="controls">
+        <div class="chip" title="Load the sample Excel files by fetching ./data/*.xlsx">
+          <label>Data</label>
+          <select id="dataMode">
+            <option value="excel" selected>Excel (./data)</option>
+            <option value="generated">Generated (random)</option>
+          </select>
+        </div>
+
+        <button class="btn" id="uploadBtn">Upload Excel Files</button>
+        <input id="fileInput" type="file" accept=".xlsx" multiple style="display:none" />
+
+        <button class="btn" id="randomizeBtn">Randomize</button>
+        <button class="btn primary" id="exportBtn">Export CSV</button>
+      </div>
     </div>
-<div class="grid">
+
+    <div class="banner" id="banner"></div>
+
+    <div class="grid">
       <section class="card">
         <div class="cardhead">
           <div class="metric">
@@ -241,11 +260,13 @@
   </div>
 
   <script>
-    const FILES = {
-      population: "data/population.xlsx",
-      yos: "data/avg_years_service.xlsx",
-      tig: "data/avg_time_in_grade.xlsx",
-      retire: "data/likely_to_retire.xlsx"
+    const DATA_BASES = ["./data", "./.data", "data", ".data"];
+
+    const FILE_NAMES = {
+      population: "population.xlsx",
+      yos: "avg_years_service.xlsx",
+      tig: "avg_time_in_grade.xlsx",
+      retire: "likely_to_retire.xlsx"
     };
 
     const EXPECTED_NAMES = {
@@ -264,9 +285,14 @@
     };
 
     const charts = {};
-const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
+    const banner = document.getElementById("banner");
+
+    const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
     const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
     const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±");
+
+    function showBanner(html){ banner.innerHTML = html; banner.style.display = "block"; }
+    function hideBanner(){ banner.style.display = "none"; banner.innerHTML = ""; }
 
     function deltaPill(el, delta, isGoodWhenUp = true, suffix = "") {
       const dir = (delta > 0) ? "up" : (delta < 0) ? "down" : "flat";
@@ -414,13 +440,25 @@ const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
       return parseExcelArrayBuffer(buf);
     }
 
-    async function loadFromExcelFolder(){
-      const pop = await fetchExcel(FILES.population);
-      const yos = await fetchExcel(FILES.yos);
-      const tig = await fetchExcel(FILES.tig);
-      const ret = await fetchExcel(FILES.retire);
-
-      model.years = pop.years;
+    
+    async function fetchExcelFromBases(fileName){
+      const errors = [];
+      for (const base of DATA_BASES){
+        const path = `${base}/${fileName}`;
+        try{
+          return await fetchExcel(path);
+        }catch(e){
+          errors.push(`${path}: ${e.message}`);
+        }
+      }
+      throw new Error("Could not load Excel from ./data or ./.data. Details:\n" + errors.join("\n"));
+    }
+async function loadFromExcelFolder(){
+      const pop = await fetchExcelFromBases(FILE_NAMES.population);
+      const yos = await fetchExcelFromBases(FILE_NAMES.yos);
+      const tig = await fetchExcelFromBases(FILE_NAMES.tig);
+      const ret = await fetchExcelFromBases(FILE_NAMES.retire);
+model.years = pop.years;
       model.population = pop.values;
       model.avgYearsService = yos.values;
       model.avgTimeInGrade = tig.values;
@@ -533,7 +571,8 @@ const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
       document.querySelectorAll('.trendLabel').forEach(el => {
         el.textContent = trendLabel;
       });
-const years = sliceLast(model.years, effectiveMonths);
+
+      const years = sliceLast(model.years, effectiveMonths);
       const pop = sliceLast(model.population, effectiveMonths);
       const yos = sliceLast(model.avgYearsService, effectiveMonths);
       const tig = sliceLast(model.avgTimeInGrade, effectiveMonths);
@@ -588,6 +627,21 @@ const retAvg = retRateSeries.reduce((a,b)=>a+b,0) / (retRateSeries.length || 1);
       makeLineChart("chartTIG","Avg Time in Grade",years,tig,(v)=>`${fmt1(v)} yrs`);
       makeLineChart("chartRetire","Likely to Retire Rate",years,retRateSeries,(v)=>`${Number(v).toFixed(1)}%`);
     }
+
+    function exportCSV(){
+      const windowN = Number(document.getElementById("windowSize").value);
+      const requestedMonths = windowN * 12;
+      const availableMonths = model.years.length;
+      const effectiveMonths = Math.min(requestedMonths, availableMonths);
+      const years = sliceLast(model.years, effectiveMonths);
+      const pop = sliceLast(model.population, effectiveMonths);
+      const yos = sliceLast(model.avgYearsService, effectiveMonths);
+      const tig = sliceLast(model.avgTimeInGrade, effectiveMonths);
+      const ret = sliceLast(model.likelyToRetire, effectiveMonths);
+const rows = [["Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToRetire"]];
+      for (let i=0;i<years.length;i++){
+        rows.push([years[i], pop[i], yos[i], tig[i], ret[i]]);
+      }
       const csv = rows.map(r=>r.join(",")).join("\n");
       const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -601,23 +655,63 @@ const retAvg = retRateSeries.reduce((a,b)=>a+b,0) / (retRateSeries.length || 1);
     }
 
     document.getElementById("windowSize").addEventListener("input", renderAll);
+    document.getElementById("exportBtn").addEventListener("click", exportCSV);
+
+    document.getElementById("randomizeBtn").addEventListener("click", ()=>{
+      document.getElementById("dataMode").value = "generated";
       genRandomFiveYears();
       renderAll();
     });
 
-    null.addEventListener("change", async (e)=>{
+    document.getElementById("dataMode").addEventListener("change", async (e)=>{
+      const mode = e.target.value;
+      if (mode === "generated"){
+        genRandomFiveYears();
+        renderAll();
+        return;
+      }
+      try{
+        await loadFromExcelFolder();
+        renderAll();
+      }catch(err){
+        showBanner(
+          `<b>Couldn’t load Excel files automatically.</b>
+           <span class="small">
+             This usually happens if you opened the page via <code>file://</code> (browser blocks fetch).
+             Fix: run a local server (see README) <i>or</i> click <b>Upload Excel Files</b>.
+           </span>`
+        );
+      }
+    });
+
+    document.getElementById("uploadBtn").addEventListener("click", ()=>{
+      document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("fileInput").addEventListener("change", async (e)=>{
       const files = e.target.files;
       if (!files || !files.length) return;
       try{
         await loadFromUploadedFiles(files);
+        document.getElementById("dataMode").value = "excel";
+        renderAll();
+      }catch(err){
+        showBanner(`<b>Upload failed:</b> ${err.message}`);
+      }
+    });
+
     (async function init(){
       try{
         await loadFromExcelFolder();
       }catch(err){
         genRandomFiveYears();
+        showBanner(
+          `<b>Started with generated data</b> because Excel files couldn’t be fetched (common if you opened index.html via file://).
+           <span class="small">To load the provided Excel files, run a local server (README) or use <b>Upload Excel Files</b>.</span>`
+        );
       }
       renderAll();
     })();
-</script>
+  </script>
 </body>
 </html>
