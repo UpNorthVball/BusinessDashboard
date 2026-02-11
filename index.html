@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Business Overview — Excel-Backed 5-Year Trend Dashboard</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- SheetJS (XLSX parser) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:rgba(255,255,255,0.06);
+      --panel2:rgba(255,255,255,0.08);
+      --border:rgba(255,255,255,0.14);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.68);
+      --shadow:0 10px 30px rgba(0,0,0,0.35);
+      --radius:16px;
+      --radius2:22px;
+      --pad:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(125,211,252,0.16), transparent 55%),
+        radial-gradient(900px 500px at 80% 10%, rgba(167,139,250,0.14), transparent 55%),
+        radial-gradient(900px 700px at 50% 110%, rgba(52,211,153,0.10), transparent 60%),
+        var(--bg);
+    }
+    .wrap{ max-width:1200px; margin:0 auto; padding:22px 16px 40px; }
+    .topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+    .titleblock h1{ margin:0; font-size:22px; letter-spacing:0.2px; }
+    .titleblock p{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.35; max-width:780px; }
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+    .chip{
+      display:flex; align-items:center; gap:8px;
+      padding:10px 12px; border:1px solid var(--border);
+      background:var(--panel); border-radius:999px; box-shadow:var(--shadow);
+    }
+    .chip label{ color:var(--muted); font-size:12px; white-space:nowrap; }
+    .btn{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, var(--panel2), var(--panel));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+      font-size:12px;
+    }
+    .btn:hover{ filter:brightness(1.05); }
+    .btn:active{ transform:translateY(1px); }
+    .btn.primary{ border-color:rgba(125,211,252,0.35); box-shadow:0 10px 30px rgba(125,211,252,0.12); }
+    select{ appearance:none; background:transparent; color:var(--text); border:none; outline:none; font-size:12px; padding-right:16px; cursor:pointer; }
+    .grid{ display:grid; grid-template-columns:repeat(12,1fr); gap:14px; margin-top:14px; }
+    .card{
+      grid-column:span 6;
+      background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+      border:1px solid var(--border);
+      border-radius:var(--radius2);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+      min-height: 340px;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(700px 140px at 20% 0%, rgba(125,211,252,0.18), transparent 55%),
+        radial-gradient(700px 140px at 80% 0%, rgba(167,139,250,0.16), transparent 55%);
+      pointer-events:none;
+      opacity:0.75;
+    }
+    .card > *{ position:relative; }
+    .cardhead{
+      padding:var(--pad);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      border-bottom:1px solid rgba(255,255,255,0.08);
+    }
+    .metric{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+    .metric .kicker{ color:var(--muted); font-size:12px; letter-spacing:0.25px; text-transform:uppercase; }
+    .metric .value{ font-size:28px; font-weight:700; letter-spacing:0.2px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .metric .meta{ color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(0,0,0,0.18);
+      font-family:var(--mono);
+      font-size:11px;
+      color:rgba(255,255,255,0.85);
+    }
+    .delta.up{ color:#34d399; }
+    .delta.down{ color:#fb7185; }
+    .chartwrap{ padding:10px var(--pad) 16px; height:240px; }
+    canvas{ width:100% !important; height:100% !important; }
+
+    .footerpanel{
+      margin-top:14px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      box-shadow:var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .hint{ color:var(--muted); font-size:12px; line-height:1.4; }
+    .rangebox{ display:flex; align-items:center; gap:10px; min-width:260px; }
+    .rangebox .label{ color:var(--muted); font-size:12px; white-space:nowrap; }
+    input[type="range"]{ width:180px; }
+    .rangeval{ font-family:var(--mono); font-size:12px; color:rgba(255,255,255,0.85); min-width:90px; text-align:right; }
+
+    .banner{
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.22);
+      box-shadow: var(--shadow);
+      color: rgba(255,255,255,0.86);
+      display:none;
+    }
+    .banner b{ color: rgba(255,255,255,0.95); }
+    .banner .small{ display:block; color: var(--muted); margin-top: 6px; font-size: 12px; }
+    code{ font-family: var(--mono); font-size: 12px; }
+
+    @media (max-width: 980px){
+      .card{ grid-column:span 12; }
+      .controls{ justify-content:flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="titleblock">
+        <h1>Business Overview</h1>
+        <p>
+          This dashboard reads the last 5 years from <b>Excel files</b> in the <code>./data</code> folder.
+          Hover charts for tooltips. Use <b>Upload Excel Files</b> if your browser blocks local file fetching.
+        </p>
+      </div>
+    </div>
+<div class="grid">
+      <section class="card">
+        <div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Current Population</div>
+            <div class="value" id="popValue">—</div>
+            <div class="meta">
+              <span class="pill" id="popDelta">—</span>
+              <span class="pill" id="popAvg">Avg —</span>
+              <span class="pill" id="popMed">Median —</span>
+</div>
+          </div>
+          <div class="pill trendLabel">5-Year Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartPopulation"></canvas></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Average Years of Service</div>
+            <div class="value" id="yosValue">—</div>
+            <div class="meta">
+              <span class="pill" id="yosDelta">—</span>
+              <span class="pill" id="yosMed">Median —</span>
+              <span class="pill" id="yosAvg">Avg —</span>
+</div>
+          </div>
+          <div class="pill trendLabel">5-Year Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartYOS"></canvas></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Average Time in Grade</div>
+            <div class="value" id="tigValue">—</div>
+            <div class="meta">
+              <span class="pill" id="tigDelta">—</span>
+              <span class="pill" id="tigAvg">Avg —</span>
+              <span class="pill" id="tigMed">Median —</span>
+</div>
+          </div>
+          <div class="pill trendLabel">5-Year Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartTIG"></canvas></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Likely to Retire (Next 12 Months)</div>
+            <div class="value" id="retValue">—</div>
+            <div class="meta">
+              <span class="pill" id="retDelta">—</span>
+              <span class="pill" id="retAvg">Avg —</span>
+              <span class="pill" id="retMed">Median —</span>
+</div>
+          </div>
+          <div class="pill trendLabel">5-Year Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartRetire"></canvas></div>
+      </section>
+    </div>
+
+    <div class="footerpanel">
+      <div class="hint">
+        <b>Excel filenames expected:</b>
+        <code>population.xlsx</code>, <code>avg_years_service.xlsx</code>, <code>avg_time_in_grade.xlsx</code>, <code>likely_to_retire.xlsx</code>.
+        <span class="small" style="display:block;margin-top:6px;color:rgba(255,255,255,0.60)">
+          Each file should have a sheet named <b>Data</b> and a Year/Value table starting at row 3.
+        </span>
+      </div>
+
+      <div class="rangebox">
+        <div class="label">Time window</div>
+        <input id="windowSize" type="range" min="3" max="5" step="1" value="5" />
+        <div class="rangeval" id="windowLabel">Last 5 years</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FILES = {
+      population: "data/population.xlsx",
+      yos: "data/avg_years_service.xlsx",
+      tig: "data/avg_time_in_grade.xlsx",
+      retire: "data/likely_to_retire.xlsx"
+    };
+
+    const EXPECTED_NAMES = {
+      "population.xlsx": "population",
+      "avg_years_service.xlsx": "yos",
+      "avg_time_in_grade.xlsx": "tig",
+      "likely_to_retire.xlsx": "retire"
+    };
+
+    let model = {
+      years: [],
+      population: [],
+      avgYearsService: [],
+      avgTimeInGrade: [],
+      likelyToRetire: []
+    };
+
+    const charts = {};
+const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
+    const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
+    const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±");
+
+    function deltaPill(el, delta, isGoodWhenUp = true, suffix = "") {
+      const dir = (delta > 0) ? "up" : (delta < 0) ? "down" : "flat";
+      const arrow = (dir === "up") ? "▲" : (dir === "down") ? "▼" : "→";
+      const val = Math.abs(delta).toFixed((Math.abs(delta)%1!==0)?1:0);
+      el.textContent = `${arrow} ${val}${suffix}`;
+      el.classList.remove("delta","up","down");
+      // Color logic: green when movement is favorable, red when unfavorable
+      if (dir === "flat") {
+        el.classList.add("delta");
+      } else {
+        const movementIsUp = (dir === "up");
+        const favorable = isGoodWhenUp ? movementIsUp : !movementIsUp;
+        el.classList.add("delta", favorable ? "up" : "down");
+      }
+    }
+
+    function cagr(start, end, yearsCountMinus1){
+      if (start <= 0 || yearsCountMinus1 <= 0) return null;
+      return Math.pow(end / start, 1 / yearsCountMinus1) - 1;
+    }
+    function sliceLast(arr, n){ return arr.slice(Math.max(0, arr.length - n)); }
+
+    function median(arr){
+      const s = [...arr].slice().sort((a,b)=>a-b);
+      const n = s.length;
+      if (!n) return 0;
+      const mid = Math.floor(n/2);
+      return (n % 2) ? s[mid] : (s[mid-1] + s[mid]) / 2;
+    }
+
+    
+    function spanLabelFromMonths(months){
+      const n = Number(months) || 0;
+      if (n <= 0) return "no data";
+      const y = Math.floor(n / 12);
+      const m = n % 12;
+      const moWord = (v)=> v === 1 ? "mo" : "mos";
+      const yrWord = (v)=> v === 1 ? "yr" : "yrs";
+      if (y <= 0) return `last ${n} ${moWord(n)}`;
+      if (m === 0) return `last ${y} ${yrWord(y)}`;
+      return `last ${y} ${yrWord(y)} ${m} ${moWord(m)}`;
+    }
+
+    function trendLabelFromMonths(months){
+      const n = Number(months) || 0;
+      if (n <= 0) return "Trend";
+      const y = Math.floor(n / 12);
+      const m = n % 12;
+      if (y <= 0) return `${n}-Month Trend`;
+      if (m === 0) return `${y}-Year Trend`;
+      return `${y}y ${m}m Trend`;
+    }
+
+
+    function makeLineChart(canvasId, label, labels, data, tooltipFmt){
+      const ctx = document.getElementById(canvasId);
+      if (charts[canvasId]) charts[canvasId].destroy();
+
+      charts[canvasId] = new Chart(ctx, {
+        type:"line",
+        data:{
+          labels,
+          datasets:[{
+            label,
+            data,
+            tension:0.35,
+            borderWidth:2,
+            pointRadius:(ctx)=>{
+              const lbl = ctx.chart.data.labels?.[ctx.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? 3 : 0;
+            },
+            pointHoverRadius:(ctx)=>{
+              const lbl = ctx.chart.data.labels?.[ctx.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? 5 : 0;
+            },
+            pointHitRadius:12,
+            fill:false
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          interaction:{ mode:"index", intersect:false },
+          plugins:{
+            legend:{ display:false },
+            tooltip:{
+              backgroundColor:"rgba(10,18,32,0.92)",
+              borderColor:"rgba(255,255,255,0.14)",
+              borderWidth:1,
+              titleColor:"rgba(255,255,255,0.92)",
+              bodyColor:"rgba(255,255,255,0.86)",
+              callbacks:{ label:(ctx)=> ` ${ctx.dataset.label}: ${tooltipFmt(ctx.parsed.y)}` }
+            }
+          },
+          scales:{
+            x:{ grid:{ display:false }, ticks:{
+              color:"rgba(255,255,255,0.70)",
+              maxRotation:0,
+              minRotation:0,
+              autoSkip:false,
+              callback:function(value){
+                const lbl = this.getLabelForValue(value);
+                return String(lbl).endsWith("-01") ? String(lbl).slice(0,4) : "";
+              }
+            } },
+            y:{ grid:{ display:false }, ticks:{ color:"rgba(255,255,255,0.70)" } }
+          }
+}
+      });
+    }
+
+    function parseExcelArrayBuffer(buf){
+      const wb = XLSX.read(buf, { type:"array" });
+      const ws = wb.Sheets["Data"] || wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+
+      let headerRow = -1;
+      for (let i=0; i<rows.length; i++){
+        const r = rows[i] || [];
+        if (String(r[0]||"").toLowerCase() === "year" && String(r[1]||"").toLowerCase() === "value"){
+          headerRow = i; break;
+        }
+      }
+      if (headerRow === -1) throw new Error('Could not find a "Year, Value" header row.');
+
+      const years = [];
+      const values = [];
+      for (let i=headerRow+1; i<rows.length; i++){
+        const r = rows[i] || [];
+        const y = r[0], v = r[1];
+        if (y == null || y === "") continue;
+        if (v == null || v === "") continue;
+        years.push(String(y));
+        values.push(Number(v));
+      }
+      if (years.length < 3) throw new Error("Need at least 3 rows of year/value data.");
+      return { years, values };
+    }
+
+    async function fetchExcel(path){
+      const res = await fetch(path, { cache:"no-store" });
+      if (!res.ok) throw new Error(`Fetch failed: ${path}`);
+      const buf = await res.arrayBuffer();
+      return parseExcelArrayBuffer(buf);
+    }
+
+    async function loadFromExcelFolder(){
+      const pop = await fetchExcel(FILES.population);
+      const yos = await fetchExcel(FILES.yos);
+      const tig = await fetchExcel(FILES.tig);
+      const ret = await fetchExcel(FILES.retire);
+
+      model.years = pop.years;
+      model.population = pop.values;
+      model.avgYearsService = yos.values;
+      model.avgTimeInGrade = tig.values;
+      model.likelyToRetire = ret.values;
+
+      hideBanner();
+    }
+
+    async function loadFromUploadedFiles(fileList){
+      const map = {};
+      for (const f of fileList){
+        const key = EXPECTED_NAMES[f.name];
+        if (key) map[key] = f;
+      }
+      const missing = ["population","yos","tig","retire"].filter(k => !map[k]);
+      if (missing.length){
+        throw new Error("Missing expected filenames. Please upload: population.xlsx, avg_years_service.xlsx, avg_time_in_grade.xlsx, likely_to_retire.xlsx");
+      }
+
+      const readBuf = (file) => new Promise((resolve,reject)=>{
+        const fr = new FileReader();
+        fr.onload = ()=> resolve(fr.result);
+        fr.onerror = ()=> reject(new Error("Failed to read file: " + file.name));
+        fr.readAsArrayBuffer(file);
+      });
+
+      const pop = parseExcelArrayBuffer(await readBuf(map.population));
+      const yos = parseExcelArrayBuffer(await readBuf(map.yos));
+      const tig = parseExcelArrayBuffer(await readBuf(map.tig));
+      const ret = parseExcelArrayBuffer(await readBuf(map.retire));
+
+      model.years = pop.years;
+      model.population = pop.values;
+      model.avgYearsService = yos.values;
+      model.avgTimeInGrade = tig.values;
+      model.likelyToRetire = ret.values;
+
+      hideBanner();
+    }
+
+    function genRandomFiveYears(){
+      // Generates monthly points for the last 60 months (5 years)
+      const now = new Date();
+      const labels = [];
+      const endY = now.getFullYear();
+      const endM = now.getMonth() + 1; // 1-12
+
+      let y = endY, m = endM;
+      for (let i=0; i<60; i++){
+        labels.push(`${y}-${String(m).padStart(2,"0")}`);
+        m -= 1;
+        if (m === 0){ m = 12; y -= 1; }
+      }
+      labels.reverse();
+
+      // population: base 850–1200 with monthly random walk
+      let p = 850 + Math.random()*350;
+      const pop = labels.map(()=>{
+        p = p + (Math.random()*30 - 10); // slight upward bias
+        p = Math.max(600, p);
+        return Math.round(p);
+      });
+
+      // yos: 6–12 with gentle monthly drift
+      let yosV = 6.5 + Math.random()*4;
+      const yos = labels.map(()=>{
+        yosV = yosV + (Math.random()*0.15 - 0.03);
+        yosV = Math.max(4.5, Math.min(16, yosV));
+        return Math.round(yosV*10)/10;
+      });
+
+      // tig: 2.2–5.0 with drift
+      let tigV = 2.2 + Math.random()*1.3;
+      const tig = labels.map(()=>{
+        tigV = tigV + (Math.random()*0.12 - 0.02);
+        tigV = Math.max(1.5, Math.min(6.5, tigV));
+        return Math.round(tigV*10)/10;
+      });
+
+      // retire: counts derived from pop with a % rate (stored as count, UI displays %)
+      const ret = pop.map(v=>{
+        const rate = 0.04 + Math.random()*0.06;
+        return Math.round(v * rate);
+      });
+
+      model = {
+        years: labels,
+        population: pop,
+        avgYearsService: yos,
+        avgTimeInGrade: tig,
+        likelyToRetire: ret
+      };
+
+      showBanner(`<b>Generated data</b> is active. Switch back to <b>Excel (./data)</b> to reload from files.`);
+    }
+
+    function renderAll(){
+      const windowN = Number(document.getElementById("windowSize").value);
+      const requestedMonths = windowN * 12;
+      const availableMonths = model.years.length;
+      const effectiveMonths = Math.min(requestedMonths, availableMonths);
+      const spanLabel = spanLabelFromMonths(effectiveMonths);
+      const trendLabel = trendLabelFromMonths(effectiveMonths);
+
+      document.getElementById("windowLabel").textContent = (effectiveMonths === requestedMonths)
+        ? `Last ${windowN} years`
+        : `Last ${windowN} years (available: ${spanLabel})`;
+
+      // Update the per-card trend label to match the effective window
+      document.querySelectorAll('.trendLabel').forEach(el => {
+        el.textContent = trendLabel;
+      });
+const years = sliceLast(model.years, effectiveMonths);
+      const pop = sliceLast(model.population, effectiveMonths);
+      const yos = sliceLast(model.avgYearsService, effectiveMonths);
+      const tig = sliceLast(model.avgTimeInGrade, effectiveMonths);
+      const ret = sliceLast(model.likelyToRetire, effectiveMonths);
+const popLatest = pop.at(-1);
+      const popStart = pop.at(0) ?? popLatest;
+      document.getElementById("popValue").textContent = fmtInt(popLatest);
+      deltaPill(document.getElementById("popDelta"), popLatest - popStart, true);
+      const popAvg = pop.reduce((a,b)=>a+b,0) / (pop.length || 1);
+      document.getElementById("popAvg").textContent = `Avg (${spanLabel}) ${fmtInt(popAvg)}`;
+      const popMed = median(pop);
+      document.getElementById("popMed").textContent = `Median (${spanLabel}) ${fmtInt(popMed)}`;
+
+      const popCagrVal = cagr(pop[0], popLatest, pop.length-1);
+      const yosLatest = yos.at(-1);
+      const yosStart = yos.at(0) ?? yosLatest;
+      document.getElementById("yosValue").textContent = `${fmt1(yosLatest)} yrs`;
+      deltaPill(document.getElementById("yosDelta"), yosLatest - yosStart, true);
+      const yosSorted = [...yos].slice().sort((a,b)=>a-b);
+      const yosMid = Math.floor(yosSorted.length / 2);
+      const yosMed = (yosSorted.length === 0) ? 0 : (yosSorted.length % 2 ? yosSorted[yosMid] : (yosSorted[yosMid-1] + yosSorted[yosMid]) / 2);
+      document.getElementById("yosMed").textContent = `Median (${spanLabel}) ${fmt1(yosMed)} yrs`;
+      const yosAvg = yos.reduce((a,b)=>a+b,0) / (yos.length || 1);
+      document.getElementById("yosAvg").textContent = `Avg (${spanLabel}) ${fmt1(yosAvg)} yrs`;
+
+
+      const tigLatest = tig.at(-1);
+      const tigStart = tig.at(0) ?? tigLatest;
+      document.getElementById("tigValue").textContent = `${fmt1(tigLatest)} yrs`;
+      deltaPill(document.getElementById("tigDelta"), tigLatest - tigStart, true);
+      const tigAvg = tig.reduce((a,b)=>a+b,0) / (tig.length || 1);
+      document.getElementById("tigAvg").textContent = `Avg (${spanLabel}) ${fmt1(tigAvg)} yrs`;
+      const tigMed = median(tig);
+      document.getElementById("tigMed").textContent = `Median (${spanLabel}) ${fmt1(tigMed)} yrs`;
+      const retLatest = ret.at(-1);
+      const retStart = ret.at(0) ?? retLatest;
+      const popLatestForRet = pop.at(-1) ?? 0;
+      const popStartForRet = pop.at(0) ?? popLatestForRet;
+      const retRateLatest = popLatestForRet > 0 ? (retLatest / popLatestForRet) * 100 : 0;
+      const retRateStart = popStartForRet > 0 ? (retStart / popStartForRet) * 100 : 0;
+      document.getElementById("retValue").textContent = `${retRateLatest.toFixed(1)}%`;
+      deltaPill(document.getElementById("retDelta"), retRateLatest - retRateStart, false, "pp");
+      const retRateSeries = ret.map((v,i) => (pop[i] > 0 ? (v / pop[i]) * 100 : 0));
+const retAvg = retRateSeries.reduce((a,b)=>a+b,0) / (retRateSeries.length || 1);
+      document.getElementById("retAvg").textContent = `Avg (${spanLabel}) ${retAvg.toFixed(1)}%`;
+      const retMed = median(retRateSeries);
+      document.getElementById("retMed").textContent = `Median (${spanLabel}) ${retMed.toFixed(1)}%`;
+
+
+      makeLineChart("chartPopulation","Population",years,pop,(v)=>fmtInt(v));
+      makeLineChart("chartYOS","Avg Years of Service",years,yos,(v)=>`${fmt1(v)} yrs`);
+      makeLineChart("chartTIG","Avg Time in Grade",years,tig,(v)=>`${fmt1(v)} yrs`);
+      makeLineChart("chartRetire","Likely to Retire Rate",years,retRateSeries,(v)=>`${Number(v).toFixed(1)}%`);
+    }
+      const csv = rows.map(r=>r.join(",")).join("\n");
+      const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "business_overview_trends.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("windowSize").addEventListener("input", renderAll);
+      genRandomFiveYears();
+      renderAll();
+    });
+
+    null.addEventListener("change", async (e)=>{
+      const files = e.target.files;
+      if (!files || !files.length) return;
+      try{
+        await loadFromUploadedFiles(files);
+    (async function init(){
+      try{
+        await loadFromExcelFolder();
+      }catch(err){
+        genRandomFiveYears();
+      }
+      renderAll();
+    })();
+</script>
+</body>
+</html>
