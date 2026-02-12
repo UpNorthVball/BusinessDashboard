@@ -12,7 +12,7 @@
 
   <style>
     :root{
-      --bg:#0b1220;
+      --bg:#123a63;
       --panel:rgba(255,255,255,0.06);
       --panel2:rgba(255,255,255,0.08);
       --border:rgba(255,255,255,0.14);
@@ -27,19 +27,17 @@
     }
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
-    body{
+        html{ background:var(--bg); }
+body{
       margin:0;
       font-family:var(--sans);
       color:var(--text);
-      background:
-        radial-gradient(900px 500px at 20% 10%, rgba(125,211,252,0.16), transparent 55%),
-        radial-gradient(900px 500px at 80% 10%, rgba(167,139,250,0.14), transparent 55%),
-        radial-gradient(900px 700px at 50% 110%, rgba(52,211,153,0.10), transparent 60%),
-        var(--bg);
+      background:var(--bg);
     }
     .wrap{ max-width:1200px; margin:0 auto; padding:22px 16px 40px; }
     .topbar{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
     .titleblock h1{ margin:0; font-size:22px; letter-spacing:0.2px; }
+    .titleblock .byline{ margin:4px 0 0; color:var(--muted); font-size:12px; }
     .titleblock p{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.35; max-width:780px; }
     .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
     .chip{
@@ -73,7 +71,27 @@
       position:relative;
       min-height: 340px;
     }
-    .card::before{
+    
+    .cardIcon{
+      position:absolute;
+      top:14px;
+      left:14px;
+      width:34px;
+      height:34px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(255,255,255,0.92);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      pointer-events:none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+    }
+    .cardIcon svg{ width:20px; height:20px; display:block; }
+.card::before{
       content:"";
       position:absolute; inset:-1px;
       background:
@@ -88,10 +106,13 @@
       display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
       border-bottom:1px solid rgba(255,255,255,0.08);
     }
-    .metric{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+    .metric{ display:flex; flex-direction:column; gap:6px; min-width:0; align-items:center; text-align:center; }
+    .metric .kpiRow{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; }
+    .metric .deltaPill{ margin-left:0; }
     .metric .kicker{ color:var(--muted); font-size:12px; letter-spacing:0.25px; text-transform:uppercase; }
     .metric .value{ font-size:28px; font-weight:700; letter-spacing:0.2px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .metric .meta{ color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .metric .meta{ color:var(--muted); font-size:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; width:100%; }
+    .metric .meta.oneline{ flex-wrap:nowrap; overflow-x:auto; white-space:nowrap; }
     .pill{
       display:inline-flex; align-items:center; gap:6px;
       padding:4px 10px; border-radius:999px;
@@ -125,7 +146,11 @@
     input[type="range"]{ width:180px; }
     .rangeval{ font-family:var(--mono); font-size:12px; color:rgba(255,255,255,0.85); min-width:90px; text-align:right; }
 
-    .banner{
+    
+    .rangecol{ display:flex; flex-direction:column; gap:4px; }
+    .rangehint{ font-size:11px; color:var(--muted); max-width:260px; line-height:1.2; }
+    .leftHint{ margin-right:12px; max-width:340px; }
+.banner{
       margin-top: 12px;
       padding: 12px 14px;
       border-radius: 16px;
@@ -139,7 +164,136 @@
     .banner .small{ display:block; color: var(--muted); margin-top: 6px; font-size: 12px; }
     code{ font-family: var(--mono); font-size: 12px; }
 
+    /* Year-over-year section */
+    .sectionHeader{ margin-top:16px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .sectionHeader h2{ margin:0; font-size:16px; letter-spacing:0.2px; }
+
+    .scopeHeader{ margin-top:10px; margin-bottom:6px; display:flex; justify-content:center; }
+    .scopeTitleText{ font-weight:900; font-size:20px; letter-spacing:0.25px; opacity:0.98; }
+    .sectionHeader .sub{ color:var(--muted); font-size:12px; margin:0; }
+.sectionHeader.centerTitle{ justify-content:center; flex-direction:column; align-items:center; text-align:center; }
+.sectionHeader.centerTitle h2{ font-weight:800; }
+    .grid.yoy{ margin-top:10px; }
+    .card.yoy{ min-height:300px; }
+    .card.yoy .chartwrap{ height:200px; }
+
+    /* Trend block + division tabs */
+    .trendBlock{
+      margin-top:14px;
+      padding:14px 14px 18px;
+      border-radius:var(--radius2);
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.04);
+      box-shadow:var(--shadow);
+    }
+    .trendBlock .sectionHeader.centerTitle{ margin-top:10px; }
+    .divisionbar{
+      margin-top: 2px;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.16);
+      box-shadow: var(--shadow);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .functionbar{ margin-top: -2px; }
+    .divisionbar .divLabel{
+      font-size:12px;
+      color: var(--muted);
+      letter-spacing: .2px;
+      white-space: nowrap;
+      margin-right: 2px;
+    }
+    .tabs{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .tabbtn{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.88);
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+    .tabbtn.disabled,
+    .tabbtn:disabled{ opacity:0.45; cursor:not-allowed; }
+    .tabbtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.10); }
+    .tabbtn.active{
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.32);
+      color: rgba(255,255,255,0.95);
+    }
+
+
+    
+    /* YTD Net Headcount Gain */
+    .ytdWrap{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+      align-items:stretch;
+    }
+    .card.ytd{ min-height:220px; }
+    .card.ytd .chartwrap{ height:220px; }
+    .ytdTable{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.10);
+    }
+    .ytdTable thead th{
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:0.2px;
+      padding:9px 10px;
+      border-bottom:1px solid rgba(255,255,255,0.14);
+    }
+    .ytdTable thead th:not(:first-child){ text-align:center; }
+    .ytdTable tbody th{
+      padding:10px 10px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+      text-align:left;
+      white-space:nowrap;
+      border-right:1px solid rgba(255,255,255,0.12);
+    }
+    .ytdTable tbody td{
+      padding:10px 8px;
+      font-size:13px;
+      font-weight:900;
+      text-align:center;
+      white-space:nowrap;
+    }
+    .ytdTable tbody td + td{ border-left:1px solid rgba(255,255,255,0.10); }
+    .ytdTable tbody td.netPos{ color: rgba(110,255,170,0.92); }
+    .ytdTable tbody td.netNeg{ color: rgba(255,140,140,0.92); }
+    .ytdTable tbody td.netZero{ color: rgba(255,255,255,0.92); }
+    .ytdTableWrap{ margin-top:10px; }
+    .ytdNote{ margin-top:10px; }
     @media (max-width: 980px){
+      .ytdWrap{ grid-template-columns:1fr; }
+    }
+
+@media (max-width: 980px){
       .card{ grid-column:span 12; }
       .controls{ justify-content:flex-start; }
     }
@@ -151,9 +305,9 @@
     <div class="topbar">
       <div class="titleblock">
         <h1>Business Overview</h1>
+        <div class="byline">Author: Dane Erosa — February 11, 2026</div>
         <p>
-          This dashboard reads the last 5 years from <b>Excel files</b> in the <code>./data</code> folder.
-          Hover charts for tooltips. Use <b>Upload Excel Files</b> if your browser blocks local file fetching.
+          This is a high level monthly overview of headcount trends, historical gains/losses, transfers, and grade distributions.
         </p>
       </div>
 
@@ -161,32 +315,66 @@
         <div class="chip" title="Load the sample Excel files by fetching ./data/*.xlsx">
           <label>Data</label>
           <select id="dataMode">
-            <option value="excel" selected>Excel (./data)</option>
+              <option value="full" selected>Full_Data (bundled)</option>
+            <option value="excel">Excel (./data)</option>
+            <option value="folder">Folder (Divisions/Functions)</option>
             <option value="generated">Generated (random)</option>
-          </select>
+</select>
         </div>
-
-        <button class="btn" id="uploadBtn">Upload Excel Files</button>
+<button class="btn" id="pickFolderBtn" title="Pick a local folder that contains Overview/ and Division/ subfolders.">Pick Data Folder</button>
         <input id="fileInput" type="file" accept=".xlsx" multiple style="display:none" />
 
         <button class="btn" id="randomizeBtn">Randomize</button>
-        <button class="btn primary" id="exportBtn">Export CSV</button>
-      </div>
+</div>
     </div>
 
     <div class="banner" id="banner"></div>
 
+
+
+    <div class="trendBlock">
+      <div class="divisionbar" id="divisionBar">
+        <div class="divLabel">Divisions</div>
+        <div class="tabs" id="divisionTabs"></div>
+      </div>
+      <div class="divisionbar functionbar" id="functionBar">
+        <div class="divLabel">Functions</div>
+        <div class="tabs" id="functionTabs"></div>
+      </div>
+
+      <div class="divisionbar functionbar subfunctionbar" id="subFunctionBar">
+        <div class="divLabel">Sub Functions</div>
+        <div class="tabs" id="subFunctionTabs"></div>
+      </div>
+
+      <div class="scopeHeader centerTitle">
+        <div class="scopeTitleText" id="scopeTitle">Overview</div>
+      </div>
+
+    <div class="sectionHeader centerTitle">
+      <h2 id="fiveYearTrendTitle">Five Year Trend</h2>
+    </div>
+
     <div class="grid">
       <section class="card">
-        <div class="cardhead">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2.2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4V21"></path>
+      <circle cx="8.5" cy="7.5" r="3.5"></circle>
+      <path d="M20 21v-2a3.2 3.2 0 0 0-2.3-3.1"></path>
+      <circle cx="17.5" cy="8.5" r="2.8"></circle>
+    </svg></div>
+<div class="cardhead">
           <div class="metric">
             <div class="kicker">Current Population</div>
-            <div class="value" id="popValue">—</div>
-            <div class="meta">
-              <span class="pill" id="popDelta">—</span>
+            <div class="kpiRow">
+              <div class="value" id="popValue">—</div>
+              <span class="pill deltaPill" id="popDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
               <span class="pill" id="popAvg">Avg —</span>
               <span class="pill" id="popMed">Median —</span>
-</div>
+            </div>
           </div>
           <div class="pill trendLabel">5-Year Trend</div>
         </div>
@@ -194,15 +382,26 @@
       </section>
 
       <section class="card">
-        <div class="cardhead">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="12" height="14" rx="2"></rect>
+      <path d="M7 2v4"></path>
+      <path d="M11 2v4"></path>
+      <path d="M3 8h12"></path>
+      <circle cx="18" cy="16" r="3"></circle>
+      <path d="M18 15v1l1 1"></path>
+    </svg></div>
+<div class="cardhead">
           <div class="metric">
             <div class="kicker">Average Years of Service</div>
-            <div class="value" id="yosValue">—</div>
-            <div class="meta">
-              <span class="pill" id="yosDelta">—</span>
-              <span class="pill" id="yosMed">Median —</span>
+            <div class="kpiRow">
+              <div class="value" id="yosValue">—</div>
+              <span class="pill deltaPill" id="yosDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
               <span class="pill" id="yosAvg">Avg —</span>
-</div>
+              <span class="pill" id="yosMed">Median —</span>
+            </div>
           </div>
           <div class="pill trendLabel">5-Year Trend</div>
         </div>
@@ -210,15 +409,23 @@
       </section>
 
       <section class="card">
-        <div class="cardhead">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8.5" r="3.5"></circle>
+      <path d="M9 12.4l-1.2 8.8 4.2-2.1 4.2 2.1-1.2-8.8"></path>
+      <path d="M10.8 8.5l1.1 1.1 2.1-2.1"></path>
+    </svg></div>
+<div class="cardhead">
           <div class="metric">
             <div class="kicker">Average Time in Grade</div>
-            <div class="value" id="tigValue">—</div>
-            <div class="meta">
-              <span class="pill" id="tigDelta">—</span>
+            <div class="kpiRow">
+              <div class="value" id="tigValue">—</div>
+              <span class="pill deltaPill" id="tigDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
               <span class="pill" id="tigAvg">Avg —</span>
               <span class="pill" id="tigMed">Median —</span>
-</div>
+            </div>
           </div>
           <div class="pill trendLabel">5-Year Trend</div>
         </div>
@@ -226,15 +433,24 @@
       </section>
 
       <section class="card">
-        <div class="cardhead">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8.5" cy="7.5" r="3"></circle>
+      <path d="M2.5 21c.9-3.6 3.8-5.6 6-5.6s5.1 2 6 5.6"></path>
+      <circle cx="18" cy="16" r="3"></circle>
+      <path d="M18 15v1l1 1"></path>
+    </svg></div>
+<div class="cardhead">
           <div class="metric">
             <div class="kicker">Likely to Retire (Next 12 Months)</div>
-            <div class="value" id="retValue">—</div>
-            <div class="meta">
-              <span class="pill" id="retDelta">—</span>
+            <div class="kpiRow">
+              <div class="value" id="retValue">—</div>
+              <span class="pill deltaPill" id="retDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
               <span class="pill" id="retAvg">Avg —</span>
               <span class="pill" id="retMed">Median —</span>
-</div>
+            </div>
           </div>
           <div class="pill trendLabel">5-Year Trend</div>
         </div>
@@ -243,53 +459,246 @@
     </div>
 
     <div class="footerpanel">
-      <div class="hint">
-        <b>Excel filenames expected:</b>
-        <code>population.xlsx</code>, <code>avg_years_service.xlsx</code>, <code>avg_time_in_grade.xlsx</code>, <code>likely_to_retire.xlsx</code>.
-        <span class="small" style="display:block;margin-top:6px;color:rgba(255,255,255,0.60)">
-          Each file should have a sheet named <b>Data</b> and a Year/Value table starting at row 3.
-        </span>
-      </div>
 
       <div class="rangebox">
+        <div class="rangehint leftHint">Adjusting the sliding window will also adjust the median, averages, and delta change</div>
         <div class="label">Time window</div>
-        <input id="windowSize" type="range" min="3" max="5" step="1" value="5" />
+        <div class="rangecol">
+          <input id="windowSize" type="range" min="3" max="5" step="1" value="5" />
+        </div>
         <div class="rangeval" id="windowLabel">Last 5 years</div>
       </div>
     </div>
+
+    <div class="sectionHeader centerTitle">
+      <h2>Year Over Year Trend</h2>
+      <p class="sub">Last 12 months</p>
+    </div>
+
+    <div class="grid yoy">
+      <section class="card yoy">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4v16h16"></path>
+      <path d="M6 8l4 4 3-3 7 7"></path>
+      <path d="M20 16v4h-4"></path>
+    </svg></div>
+<div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Overall Attrition</div>
+            <div class="kpiRow">
+              <div class="value" id="oaValue">—</div>
+              <span class="pill deltaPill" id="oaDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
+              <span class="pill" id="oaAvg">Avg —</span>
+              <span class="pill" id="oaMed">Median —</span>
+            </div>
+          </div>
+          <div class="pill yoyTrendLabel">12-Month Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartOverallAttrition"></canvas></div>
+      </section>
+
+      <section class="card yoy">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h8v16H4z"></path>
+      <path d="M8 12h.01"></path>
+      <path d="M13 12h8"></path>
+      <path d="M17 8l4 4-4 4"></path>
+    </svg></div>
+<div class="cardhead">
+          <div class="metric">
+            <div class="kicker">Resignation Attrition</div>
+            <div class="kpiRow">
+              <div class="value" id="raValue">—</div>
+              <span class="pill deltaPill" id="raDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
+              <span class="pill" id="raAvg">Avg —</span>
+              <span class="pill" id="raMed">Median —</span>
+            </div>
+          </div>
+          <div class="pill yoyTrendLabel">12-Month Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartResignationAttrition"></canvas></div>
+      </section>
+
+      <section class="card yoy">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 16l6-6 4 4 5-5"></path>
+      <path d="M21 9v6h-6"></path>
+      <path d="M6 20h12"></path>
+    </svg></div>
+<div class="cardhead">
+          <div class="metric">
+            <div class="kicker"># of Promotions</div>
+            <div class="kpiRow">
+              <div class="value" id="prValue">—</div>
+              <span class="pill deltaPill" id="prDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
+              <span class="pill" id="prAvg">Avg —</span>
+              <span class="pill" id="prMed">Median —</span>
+            </div>
+          </div>
+          <div class="pill yoyTrendLabel">12-Month Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartPromotions"></canvas></div>
+      </section>
+
+      <section class="card yoy">
+        
+        <div class="cardIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="8" r="3"></circle>
+      <path d="M2.5 21c.9-3.6 3.8-5.6 6.5-5.6s5.6 2 6.5 5.6"></path>
+      <path d="M18.3 7.2l.7 1.8h1.9l-1.5 1.1.6 1.8-1.7-1.1-1.7 1.1.6-1.8-1.5-1.1h1.9z"></path>
+    </svg></div>
+<div class="cardhead">
+          <div class="metric">
+            <div class="kicker">New to Management Roles</div>
+            <div class="kpiRow">
+              <div class="value" id="nmValue">—</div>
+              <span class="pill deltaPill" id="nmDelta">—</span>
+            </div>
+            <div class="meta metaBelow">
+              <span class="pill" id="nmAvg">Avg —</span>
+              <span class="pill" id="nmMed">Median —</span>
+            </div>
+          </div>
+          <div class="pill yoyTrendLabel">12-Month Trend</div>
+        </div>
+        <div class="chartwrap"><canvas id="chartNewToManagement"></canvas></div>
+      </section>
+    </div>
+
+
+    <div class="sectionHeader centerTitle">
+      <h2>YTD Net Headcount Gain</h2>
+      <p class="sub" id="ytdSub">Year to date</p>
+    </div>
+
+    <div class="ytdWrap">
+      <section class="card ytd">
+        <div class="ytdTableWrap">
+          <table class="ytdTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Jan</th>
+                <th>Feb</th>
+                <th>Mar</th>
+                <th>Apr</th>
+                <th>May</th>
+                <th>Jun</th>
+                <th>Jul</th>
+                <th>Aug</th>
+                <th>Sep</th>
+                <th>Oct</th>
+                <th>Nov</th>
+                <th>Dec</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Headcount</th>
+                <td id="ytdHC_01">—</td><td id="ytdHC_02">—</td><td id="ytdHC_03">—</td><td id="ytdHC_04">—</td><td id="ytdHC_05">—</td><td id="ytdHC_06">—</td><td id="ytdHC_07">—</td><td id="ytdHC_08">—</td><td id="ytdHC_09">—</td><td id="ytdHC_10">—</td><td id="ytdHC_11">—</td><td id="ytdHC_12">—</td>
+              </tr>
+              <tr>
+                <th scope="row">Net Monthly Growth</th>
+                <td id="ytdNG_01">—</td><td id="ytdNG_02">—</td><td id="ytdNG_03">—</td><td id="ytdNG_04">—</td><td id="ytdNG_05">—</td><td id="ytdNG_06">—</td><td id="ytdNG_07">—</td><td id="ytdNG_08">—</td><td id="ytdNG_09">—</td><td id="ytdNG_10">—</td><td id="ytdNG_11">—</td><td id="ytdNG_12">—</td>
+              </tr>
+              <tr>
+                <th scope="row">Cumulative Growth</th>
+                <td id="ytdCG_01">—</td><td id="ytdCG_02">—</td><td id="ytdCG_03">—</td><td id="ytdCG_04">—</td><td id="ytdCG_05">—</td><td id="ytdCG_06">—</td><td id="ytdCG_07">—</td><td id="ytdCG_08">—</td><td id="ytdCG_09">—</td><td id="ytdCG_10">—</td><td id="ytdCG_11">—</td><td id="ytdCG_12">—</td>
+              </tr>
+
+              <tr>
+                <th scope="row">AOP Goal</th>
+                <td id="ytdGO_01">—</td><td id="ytdGO_02">—</td><td id="ytdGO_03">—</td><td id="ytdGO_04">—</td><td id="ytdGO_05">—</td><td id="ytdGO_06">—</td><td id="ytdGO_07">—</td><td id="ytdGO_08">—</td><td id="ytdGO_09">—</td><td id="ytdGO_10">—</td><td id="ytdGO_11">—</td><td id="ytdGO_12">—</td>
+              </tr>
+            </tbody>
+          </table>
+          
+        </div>
+      </section>
+
+    </div>
+
+    </div>
+
   </div>
 
   <script>
     const DATA_BASES = ["./data", "./.data", "data", ".data"];
 
+    const FULL_DATA_BASE = "./Full_Data";
+    const FULL_DATA_MANIFEST = "manifest.json";
+
     const FILE_NAMES = {
       population: "population.xlsx",
       yos: "avg_years_service.xlsx",
       tig: "avg_time_in_grade.xlsx",
-      retire: "likely_to_retire.xlsx"
+      retire: "likely_to_retire.xlsx",
+      aopGoal: "aop_goal.xlsx",
+
+      // Year-over-year metrics (optional)
+      overallAttrition: "overall_attrition.xlsx",
+      resignationAttrition: "resignation_attrition.xlsx",
+      promotions: "promotions.xlsx",
+      newToManagement: "new_to_management_roles.xlsx"
     };
 
     const EXPECTED_NAMES = {
       "population.xlsx": "population",
       "avg_years_service.xlsx": "yos",
       "avg_time_in_grade.xlsx": "tig",
-      "likely_to_retire.xlsx": "retire"
+      "likely_to_retire.xlsx": "retire",
+      "aop_goal.xlsx": "aopGoal",
+
+      // Year-over-year metrics (optional)
+      "overall_attrition.xlsx": "overallAttrition",
+      "resignation_attrition.xlsx": "resignationAttrition",
+      "promotions.xlsx": "promotions",
+      "new_to_management_roles.xlsx": "newToManagement"
     };
 
+    const DIVISION_TABS = ["Overview","Division 1","Division 2","Division 3","Division 4","Division 5"];
+    const FUNCTION_TABS = ["Overview","Function 1","Function 2","Function 3","Function 4","Function 5","Function 6","Function 7","Function 8"];
+    const SUB_FUNCTION_TABS = ["Overview"];
+
     let model = {
-      years: [],
-      population: [],
-      avgYearsService: [],
-      avgTimeInGrade: [],
-      likelyToRetire: []
+      currentDivision: "Overview",
+      currentFunction: "Overview",
+      currentSubFunction: "Overview",
+      series: {
+        population: {},
+        avgYearsService: {},
+        avgTimeInGrade: {},
+        likelyToRetire: {},
+        aopGoal: {},
+
+        overallAttrition: {},
+        resignationAttrition: {},
+        promotions: {},
+        newToManagement: {}
+      }
     };
 
     const charts = {};
     const banner = document.getElementById("banner");
+    const scopeTitleEl = document.getElementById("scopeTitle");
+    const divisionBar = document.getElementById("divisionBar");
+    const divisionTabs = document.getElementById("divisionTabs");
+    const functionBar = document.getElementById("functionBar");
+    const functionTabs = document.getElementById("functionTabs");
+    const subFunctionBar = document.getElementById("subFunctionBar");
+    const subFunctionTabs = document.getElementById("subFunctionTabs");
 
     const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
     const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
-    const sign = (n) => (n > 0 ? "+" : n < 0 ? "−" : "±");
 
     function showBanner(html){ banner.innerHTML = html; banner.style.display = "block"; }
     function hideBanner(){ banner.style.display = "none"; banner.innerHTML = ""; }
@@ -300,7 +709,6 @@
       const val = Math.abs(delta).toFixed((Math.abs(delta)%1!==0)?1:0);
       el.textContent = `${arrow} ${val}${suffix}`;
       el.classList.remove("delta","up","down");
-      // Color logic: green when movement is favorable, red when unfavorable
       if (dir === "flat") {
         el.classList.add("delta");
       } else {
@@ -310,21 +718,52 @@
       }
     }
 
-    function cagr(start, end, yearsCountMinus1){
-      if (start <= 0 || yearsCountMinus1 <= 0) return null;
-      return Math.pow(end / start, 1 / yearsCountMinus1) - 1;
+    function sliceLast(arr, n){ return (arr || []).slice(Math.max(0, (arr || []).length - n)); }
+
+    function numbersOnly(arr){
+      return (arr || []).filter(v => typeof v === "number" && Number.isFinite(v));
     }
-    function sliceLast(arr, n){ return arr.slice(Math.max(0, arr.length - n)); }
+
+    function avgNonNull(arr){
+      const nums = numbersOnly(arr);
+      if (!nums.length) return null;
+      return nums.reduce((a,b)=>a+b,0) / nums.length;
+    }
+
+    function firstNumber(arr){
+      for (const v of (arr || [])){
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+      }
+      return null;
+    }
+
+    function lastNumber(arr){
+      const a = arr || [];
+      for (let i=a.length-1; i>=0; i--){
+        const v = a[i];
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+      }
+      return null;
+    }
 
     function median(arr){
-      const s = [...arr].slice().sort((a,b)=>a-b);
+      const nums = numbersOnly(arr);
+      if (!nums.length) return null;
+      const s = [...nums].sort((a,b)=>a-b);
       const n = s.length;
-      if (!n) return 0;
       const mid = Math.floor(n/2);
       return (n % 2) ? s[mid] : (s[mid-1] + s[mid]) / 2;
     }
 
-    
+    function alignToYears(series, years){
+      const map = new Map();
+      (series?.years || []).forEach((y,i)=>{
+        const v = series.values?.[i];
+        map.set(String(y), (v == null || v === "" || Number.isNaN(Number(v))) ? null : Number(v));
+      });
+      return (years || []).map(y => map.has(String(y)) ? map.get(String(y)) : null);
+    }
+
     function spanLabelFromMonths(months){
       const n = Number(months) || 0;
       if (n <= 0) return "no data";
@@ -337,6 +776,18 @@
       return `last ${y} ${yrWord(y)} ${m} ${moWord(m)}`;
     }
 
+    function wordNumber(n){
+      const words = {1:"One",2:"Two",3:"Three",4:"Four",5:"Five",6:"Six",7:"Seven",8:"Eight",9:"Nine",10:"Ten",11:"Eleven",12:"Twelve"};
+      return words[n] || String(n);
+    }
+
+    function yearTrendTitle(years){
+      const y = Number(years) || 0;
+      const label = wordNumber(y);
+      return `${label} Year Trend`;
+    }
+
+
     function trendLabelFromMonths(months){
       const n = Number(months) || 0;
       if (n <= 0) return "Trend";
@@ -347,9 +798,344 @@
       return `${y}y ${m}m Trend`;
     }
 
+    function normalizeDivisionName(raw){
+      const s = String(raw ?? "").trim();
+      if (!s) return "Overview";
+      const n = s.toLowerCase().replace(/[^a-z0-9]/g,"");
+      if (["overview","all","total","company","overall"].includes(n)) return "Overview";
+      if (["division1","div1","d1","one","divisionone"].includes(n)) return "Division 1";
+      if (["division2","div2","d2","two","divisiontwo"].includes(n)) return "Division 2";
+      if (["division3","div3","d3","three","divisionthree"].includes(n)) return "Division 3";
+      if (["division4","div4","d4","four","divisionfour"].includes(n)) return "Division 4";
+      if (["division5","div5","d5","five","divisionfive"].includes(n)) return "Division 5";
+      return s;
+    }
+
+function normalizeFunctionName(input){
+  const s = String(input ?? "").trim();
+  if (!s) return "Overview";
+  const n = s.toLowerCase().replace(/\s+/g,"").replace(/_/g,"");
+  if (["all","allfunctions","overview","total","overall","company","enterprise"].includes(n)) return "Overview";
+  const m = n.match(/(\d)/);
+  if (m){
+    const d = Number(m[1]);
+    if (d >= 1 && d <= 8) return `Function ${d}`;
+  }
+  if (/^f(1|2|3|4|5|6|7|8)$/.test(n)) return `Function ${n.slice(1)}`;
+  if (/^function(1|2|3|4|5|6|7|8)$/.test(n)) return `Function ${n.replace("function","")}`;
+  return s;
+}
+
+function ensureAllFunctionsSeries(seriesByFunc){
+  if (!seriesByFunc) return seriesByFunc;
+  if (seriesByFunc["Overview"]) return seriesByFunc;
+  const keys = Object.keys(seriesByFunc || {});
+  if (!keys.length) return seriesByFunc;
+  if (seriesByFunc["Function 1"]) seriesByFunc["Overview"] = seriesByFunc["Function 1"];
+  else seriesByFunc["Overview"] = seriesByFunc[keys[0]];
+  return seriesByFunc;
+}
+
+function ensureOverviewDivFuncSeries(seriesByDivFunc){
+  if (!seriesByDivFunc) return seriesByDivFunc;
+  Object.keys(seriesByDivFunc).forEach(div=>{
+    seriesByDivFunc[div] = ensureAllFunctionsSeries(seriesByDivFunc[div] || {});
+  });
+  if (seriesByDivFunc["Overview"]) return seriesByDivFunc;
+  const keys = Object.keys(seriesByDivFunc || {});
+  if (!keys.length) return seriesByDivFunc;
+  if (seriesByDivFunc["Division 1"]) seriesByDivFunc["Overview"] = seriesByDivFunc["Division 1"];
+  else seriesByDivFunc["Overview"] = seriesByDivFunc[keys[0]];
+  return seriesByDivFunc;
+}
+
+
+
+    function ensureOverviewSeries(seriesByDiv){
+      if (seriesByDiv["Overview"]) return seriesByDiv;
+      const keys = Object.keys(seriesByDiv || {});
+      if (!keys.length) return seriesByDiv;
+      // Prefer Division 1 as the fallback Overview
+      if (seriesByDiv["Division 1"]) seriesByDiv["Overview"] = seriesByDiv["Division 1"];
+      else seriesByDiv["Overview"] = seriesByDiv[keys[0]];
+      return seriesByDiv;
+    }
+
+    function setMetricSeries(metricKey, seriesByDiv){
+      model.series[metricKey] = ensureOverviewDivFuncSeries(seriesByDiv || {});
+    }
+
+    function isFolderMode(){
+      return (document.getElementById("dataMode")?.value === "folder") && !!model.folder?.root;
+    }
+
+    async function setDivision(div){
+      model.currentDivision = div;
+      model.currentSubFunction = "Overview";
+
+      // Folder mode: load series for the selected division (Overview) before rendering.
+      if (isFolderMode()){
+        hideBanner();
+        model.currentFunction = "Overview";
+        rebuildFunctionTabs();
+        await ensureFolderSeriesLoaded(div, "Overview", "Overview");
+        rebuildDivisionTabs(); // refresh active state
+        renderAll();
+        return;
+      }
+
+      // Full_Data bundled mode: lazy-load selection
+      if (isFullDataMode()){
+        hideBanner();
+        model.currentFunction = (div === "Overview") ? "Overview" : (model.currentFunction || "Overview");
+        await ensureFullDataSeriesLoaded(div, model.currentFunction, model.currentSubFunction);
+        rebuildFunctionTabs();
+        rebuildDivisionTabs();
+        renderAll();
+        return;
+      }
+
+
+      // Excel/Generated: If selected division doesn't exist yet, fall back to Overview.
+      const hasDiv = !!(model.series.population && model.series.population[div]);
+      if (!hasDiv && div !== "Overview"){
+        showBanner(`<b>${div}</b> data not found in your Excel series yet. Showing <b>Overview</b> until division series are provided.`);
+        model.currentDivision = "Overview";
+      } else {
+        hideBanner();
+      }
+      model.currentFunction = "Overview";
+      rebuildFunctionTabs();
+      rebuildDivisionTabs(); // refresh active state
+      renderAll();
+    }
+
+    async function setFunction(fn){
+      model.currentFunction = fn;
+      model.currentSubFunction = "Overview";
+
+      if (isFolderMode()){
+        hideBanner();
+        await ensureFolderSubFunctionTabs(model.currentDivision || "Overview", fn);
+        await ensureFolderSeriesLoaded(model.currentDivision || "Overview", fn, model.currentSubFunction);
+        rebuildFunctionTabs(); // refresh active state
+        renderAll();
+        return;
+      }
+
+      if (isFullDataMode()){
+        hideBanner();
+        await ensureFullDataSeriesLoaded(model.currentDivision || "Overview", fn, model.currentSubFunction);
+        rebuildFunctionTabs();
+        renderAll();
+        return;
+      }
+
+
+      const div = model.currentDivision || "Overview";
+      const hasSeries = !!(getSeries("population", div, fn).years || []).length;
+      if (!hasSeries && fn !== "Overview"){
+        showBanner(`<b>${fn}</b> data not found for <b>${div}</b>. Showing <b>Overview</b> until function series are provided.`);
+        model.currentFunction = "Overview";
+      } else {
+        hideBanner();
+      }
+      rebuildFunctionTabs(); // refresh active state
+      renderAll();
+    }
+
+    function rebuildDivisionTabs(){
+      if (!divisionBar || !divisionTabs) return;
+      divisionBar.style.display = "flex";
+      divisionTabs.innerHTML = "";
+
+      const tabs = model.divisionTabs || DIVISION_TABS;
+      if (!tabs.includes(model.currentDivision)) model.currentDivision = tabs[0] || "Overview";
+
+      tabs.forEach(div=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tabbtn" + (div === model.currentDivision ? " active" : "");
+        btn.textContent = div;
+        btn.addEventListener("click", async ()=>{ await setDivision(div); });
+        divisionTabs.appendChild(btn);
+      });
+
+      rebuildFunctionTabs();
+    }
+
+    function rebuildFunctionTabs(){
+      if (!functionBar || !functionTabs) return;
+
+      const div = model.currentDivision || "Overview";
+      if (div === "Overview"){
+        functionBar.style.display = "none";
+        functionTabs.innerHTML = "";
+        model.currentFunction = "Overview";
+        if (subFunctionBar){
+          subFunctionBar.style.display = "none";
+          subFunctionTabs && (subFunctionTabs.innerHTML = "");
+        }
+        model.currentSubFunction = "Overview";
+        return;
+      }
+
+      functionBar.style.display = "flex";
+      functionTabs.innerHTML = "";
+
+      // Tab list: folder-derived > model override > default constant
+      let tabList = (model.functionTabsByDivision && model.functionTabsByDivision[div])
+        ? model.functionTabsByDivision[div]
+        : (model.functionTabs || FUNCTION_TABS);
+
+      // Ensure Overview is first
+      if (!tabList.includes("Overview")){
+        tabList = ["Overview", ...tabList];
+      } else {
+        tabList = ["Overview", ...tabList.filter(x => x !== "Overview")];
+      }
+
+      if (!tabList.includes(model.currentFunction)) model.currentFunction = "Overview";
+
+      // Excel/Generated: derive enabled set from available series (keep prior behavior).
+      let avail = null;
+      if (!isFolderMode()){
+        const popMetric = model.series?.population || {};
+        const divObj = popMetric[div] || popMetric["Overview"] || popMetric[Object.keys(popMetric)[0]] || {};
+        avail = (divObj && Array.isArray(divObj.years)) ? ["Overview"] : Object.keys(divObj || {});
+      }
+
+      tabList.forEach(fn=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+
+        const enabled = isFolderMode()
+          ? true
+          : ((fn === "Overview") || (avail || []).includes(fn));
+
+        btn.className = "tabbtn"
+          + (fn === model.currentFunction ? " active" : "")
+          + (!enabled ? " disabled" : "");
+
+        btn.textContent = fn;
+        btn.disabled = !enabled;
+
+        btn.addEventListener("click", async ()=>{ if (enabled) await setFunction(fn); });
+        functionTabs.appendChild(btn);
+      });
+      rebuildSubFunctionTabs();
+    }
+
+    
+    async function setSubFunction(subFn){
+      model.currentSubFunction = subFn || "Overview";
+
+      const div = model.currentDivision || "Overview";
+      const fn = model.currentFunction || "Overview";
+
+      if (isFolderMode()){
+        hideBanner();
+        await ensureFolderSeriesLoaded(div, fn, model.currentSubFunction);
+        rebuildSubFunctionTabs();
+        renderAll();
+        return;
+      }
+
+      if (isFullDataMode()){
+        hideBanner();
+        await ensureFullDataSeriesLoaded(div, fn, model.currentSubFunction);
+        rebuildSubFunctionTabs();
+        renderAll();
+        return;
+      }
+
+      // Excel/Generated (no sub-function support)
+      model.currentSubFunction = "Overview";
+      rebuildSubFunctionTabs();
+      renderAll();
+    }
+
+    function rebuildSubFunctionTabs(){
+      if (!subFunctionBar || !subFunctionTabs) return;
+
+      const div = model.currentDivision || "Overview";
+      const fn = model.currentFunction || "Overview";
+
+      // Only show when a specific function is selected (and not Overview / Overview)
+      if (div === "Overview" || fn === "Overview"){
+        subFunctionBar.style.display = "none";
+        subFunctionTabs.innerHTML = "";
+        model.currentSubFunction = "Overview";
+        return;
+      }
+
+      // Tab list: manifest-derived (Full_Data) or folder-derived (picked folder)
+      let tabList = (model.subFunctionTabsByDivisionFunction
+        && model.subFunctionTabsByDivisionFunction[div]
+        && model.subFunctionTabsByDivisionFunction[div][fn])
+          ? model.subFunctionTabsByDivisionFunction[div][fn]
+          : SUB_FUNCTION_TABS;
+
+      // If we only have the default, hide the bar (means no sub-function structure for this selection)
+      if (!tabList || tabList.length <= 1){
+        subFunctionBar.style.display = "none";
+        subFunctionTabs.innerHTML = "";
+        model.currentSubFunction = "Overview";
+        return;
+      }
+
+      // Ensure Overview is first
+      if (!tabList.includes("Overview")){
+        tabList = ["Overview", ...tabList];
+      } else {
+        tabList = ["Overview", ...tabList.filter(x => x !== "Overview")];
+      }
+
+      if (!tabList.includes(model.currentSubFunction)) model.currentSubFunction = "Overview";
+
+      subFunctionBar.style.display = "flex";
+      subFunctionTabs.innerHTML = "";
+
+      tabList.forEach(sf=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tabbtn" + (sf === model.currentSubFunction ? " active" : "");
+        btn.textContent = sf;
+        btn.addEventListener("click", async ()=>{ await setSubFunction(sf); });
+        subFunctionTabs.appendChild(btn);
+      });
+    }
+
+function getSeries(metricKey, division, func, subFunc){
+  const metric = model.series?.[metricKey] || {};
+  const divKey = division || model.currentDivision || "Overview";
+  const divObj = metric[divKey] || metric["Overview"] || metric[Object.keys(metric)[0]] || {};
+
+  // Back-compat if stored as division->series
+  if (divObj && Array.isArray(divObj.years)) return divObj;
+
+  const fn = func || model.currentFunction || "Overview";
+  const fnObj = divObj[fn] || divObj["Overview"] || divObj["Overview"] || divObj[Object.keys(divObj)[0]] || {};
+
+  // Back-compat if stored as division->function->series
+  if (fnObj && Array.isArray(fnObj.years)) return fnObj;
+
+  const sf = subFunc || model.currentSubFunction || "Overview";
+  return fnObj[sf] || fnObj["Overview"] || fnObj[Object.keys(fnObj)[0]] || { years: [], values: [] };
+}
+
+    function asPercentSeries(values){
+      const nums = numbersOnly(values);
+      if (!nums.length) return values;
+      const mx = Math.max(...nums);
+      // Heuristic: if values look like 0–1 fractions, convert to 0–100 %
+      if (mx <= 1.5) return (values || []).map(v => (v == null) ? null : (v * 100));
+      return values;
+    }
 
     function makeLineChart(canvasId, label, labels, data, tooltipFmt){
       const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
       if (charts[canvasId]) charts[canvasId].destroy();
 
       charts[canvasId] = new Chart(ctx, {
@@ -361,14 +1147,112 @@
             data,
             tension:0.35,
             borderWidth:2,
-            pointRadius:(ctx)=>{
-              const lbl = ctx.chart.data.labels?.[ctx.dataIndex] ?? "";
-              return String(lbl).endsWith("-01") ? 3 : 0;
+            // Make the annual (January) markers stand out a bit more
+            pointRadius:(c)=>{
+              const lbl = c.chart.data.labels?.[c.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? 4 : 0;
             },
-            pointHoverRadius:(ctx)=>{
-              const lbl = ctx.chart.data.labels?.[ctx.dataIndex] ?? "";
-              return String(lbl).endsWith("-01") ? 5 : 0;
+            pointHoverRadius:(c)=>{
+              const lbl = c.chart.data.labels?.[c.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? 6 : 0;
             },
+            pointBackgroundColor:(c)=>{
+              const lbl = c.chart.data.labels?.[c.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0)";
+            },
+            pointBorderColor:(c)=>{
+              const lbl = c.chart.data.labels?.[c.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? "rgba(18,58,99,0.9)" : "rgba(18,58,99,0)";
+            },
+            pointBorderWidth:(c)=>{
+              const lbl = c.chart.data.labels?.[c.dataIndex] ?? "";
+              return String(lbl).endsWith("-01") ? 2 : 0;
+            },
+            pointHitRadius:12,
+            fill:false
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          interaction:{ mode:"index", intersect:false },
+          layout:{ padding:{ left:8, right:18, bottom:6 } },
+          plugins:{
+            legend:{ display:false },
+            tooltip:{
+              backgroundColor:"rgba(10,18,32,0.92)",
+              borderColor:"rgba(255,255,255,0.14)",
+              borderWidth:1,
+              titleColor:"rgba(255,255,255,0.92)",
+              bodyColor:"rgba(255,255,255,0.86)",
+              callbacks:{ label:(c)=> ` ${c.dataset.label}: ${tooltipFmt(c.parsed.y)}` }
+            }
+          },
+          scales:{
+            x:{ offset:true, grid:{ display:false }, ticks:{
+              padding:6,
+              color:"rgba(255,255,255,0.70)",
+              maxRotation:0,
+              minRotation:0,
+              autoSkip:false,
+              callback:function(value){
+                const lbl = this.getLabelForValue(value);
+                return String(lbl).endsWith("-01") ? String(lbl).slice(0,4) : "";
+              }
+            } },
+            y:{
+              grid:{ display:false },
+              ticks:{
+                color:"rgba(255,255,255,0.70)",
+                callback:(v)=> tooltipFmt(v)
+              },
+              afterDataLimits:(scale)=>{
+                const min = scale.min;
+                const max = scale.max;
+                let range = max - min;
+                if (!Number.isFinite(range) || range === 0){
+                  range = Math.abs(max) || 1;
+                }
+                scale.max = max + (range * 0.05); // a bit above max
+              },
+              afterBuildTicks:(scale)=>{
+                const start = scale.min;
+                const end = scale.max;
+                const mid = (start + end) / 2;
+                scale.ticks = [start, mid, end].map(v => ({ value:v }));
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function shortMonthYear(lbl){
+      const parts = String(lbl||"").split("-");
+      if (parts.length < 2) return String(lbl||"");
+      const y = parts[0].slice(-2);
+      const mi = Math.max(0, Math.min(11, Number(parts[1]) - 1));
+      const m = MONTH_ABBR[mi] || parts[1];
+      return `${m} '${y}`;
+    }
+
+    function makeLineChart12m(canvasId, label, labels, data, tooltipFmt){
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      if (charts[canvasId]) charts[canvasId].destroy();
+
+      charts[canvasId] = new Chart(ctx, {
+        type:"line",
+        data:{
+          labels,
+          datasets:[{
+            label,
+            data,
+            tension:0.35,
+            borderWidth:2,
+            pointRadius:0,
+            pointHoverRadius:4,
             pointHitRadius:12,
             fill:false
           }]
@@ -385,62 +1269,276 @@
               borderWidth:1,
               titleColor:"rgba(255,255,255,0.92)",
               bodyColor:"rgba(255,255,255,0.86)",
-              callbacks:{ label:(ctx)=> ` ${ctx.dataset.label}: ${tooltipFmt(ctx.parsed.y)}` }
+              callbacks:{ label:(c)=> ` ${c.dataset.label}: ${tooltipFmt(c.parsed.y)}` }
             }
           },
           scales:{
-            x:{ grid:{ display:false }, ticks:{
-              color:"rgba(255,255,255,0.70)",
-              maxRotation:0,
-              minRotation:0,
-              autoSkip:false,
-              callback:function(value){
-                const lbl = this.getLabelForValue(value);
-                return String(lbl).endsWith("-01") ? String(lbl).slice(0,4) : "";
+            x:{
+              grid:{ display:false },
+              ticks:{
+                color:"rgba(255,255,255,0.70)",
+                maxRotation:0,
+                minRotation:0,
+                autoSkip:false,
+                callback:function(value, index){
+                  const lbl = this.getLabelForValue(value);
+                  return (index % 2 === 0) ? shortMonthYear(lbl) : "";
+                }
               }
-            } },
-            y:{ grid:{ display:false }, ticks:{ color:"rgba(255,255,255,0.70)" } }
+            },
+            y:{
+              grid:{ display:false },
+              ticks:{
+                color:"rgba(255,255,255,0.70)",
+                callback:(v)=> tooltipFmt(v)
+              },
+              afterDataLimits:(scale)=>{
+                const min = scale.min;
+                const max = scale.max;
+                let range = max - min;
+                if (!Number.isFinite(range) || range === 0){
+                  range = Math.abs(max) || 1;
+                }
+                scale.max = max + (range * 0.05); // a bit above max
+              },
+              afterBuildTicks:(scale)=>{
+                const start = scale.min;
+                const end = scale.max;
+                const mid = (start + end) / 2;
+                scale.ticks = [start, mid, end].map(v => ({ value:v }));
+              }
+            }
           }
-}
+        }
+      });
+
+    function makeDualLineChart(canvasId, labels, seriesA, labelA, seriesB, labelB, tooltipFmt){
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      if (charts[canvasId]) charts[canvasId].destroy();
+
+      charts[canvasId] = new Chart(ctx, {
+        type:"line",
+        data:{
+          labels,
+          datasets:[
+            {
+              label: labelA,
+              data: seriesA,
+              tension:0.35,
+              borderWidth:2,
+              borderColor:"rgba(251,186,24,0.95)",
+              backgroundColor:"rgba(251,186,24,0.15)",
+              pointRadius:0,
+              pointHoverRadius:4,
+              pointHitRadius:12,
+              fill:false
+            },
+            {
+              label: labelB,
+              data: seriesB,
+              tension:0.35,
+              borderWidth:2,
+              borderDash:[6,4],
+              borderColor:"rgba(255,255,255,0.70)",
+              backgroundColor:"rgba(255,255,255,0.12)",
+              pointRadius:0,
+              pointHoverRadius:4,
+              pointHitRadius:12,
+              fill:false
+            }
+          ]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          interaction:{ mode:"index", intersect:false },
+          plugins:{
+            legend:{ display:false },
+            tooltip:{
+              backgroundColor:"rgba(10,18,32,0.92)",
+              borderColor:"rgba(255,255,255,0.14)",
+              borderWidth:1,
+              titleColor:"rgba(255,255,255,0.92)",
+              bodyColor:"rgba(255,255,255,0.86)",
+              callbacks:{ label:(c)=> ` ${c.dataset.label}: ${tooltipFmt(c.parsed.y)}` }
+            }
+          },
+          scales:{
+            x:{
+              grid:{ display:false },
+              ticks:{
+                color:"rgba(255,255,255,0.70)",
+                maxRotation:0,
+                minRotation:0,
+                autoSkip:false,
+                callback:function(value, index){
+                  const lbl = this.getLabelForValue(value);
+                  return (labels.length <= 6 || index % 2 === 0) ? shortMonthYear(lbl) : "";
+                }
+              }
+            },
+            y:{
+              grid:{ display:false },
+              ticks:{
+                color:"rgba(255,255,255,0.70)",
+                callback:(v)=> tooltipFmt(v)
+              },
+              afterDataLimits:(scale)=>{
+                const min = scale.min;
+                const max = scale.max;
+                let range = max - min;
+                if (!Number.isFinite(range) || range === 0){
+                  range = Math.abs(max) || 1;
+                }
+                scale.max = max + (range * 0.05);
+              },
+              afterBuildTicks:(scale)=>{
+                const start = scale.min;
+                const end = scale.max;
+                const mid = (start + end) / 2;
+                scale.ticks = [start, mid, end].map(v => ({ value:v }));
+              }
+            }
+          }
+        }
       });
     }
 
-    function parseExcelArrayBuffer(buf){
-      const wb = XLSX.read(buf, { type:"array" });
-      const ws = wb.Sheets["Data"] || wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
-
-      let headerRow = -1;
-      for (let i=0; i<rows.length; i++){
-        const r = rows[i] || [];
-        if (String(r[0]||"").toLowerCase() === "year" && String(r[1]||"").toLowerCase() === "value"){
-          headerRow = i; break;
-        }
-      }
-      if (headerRow === -1) throw new Error('Could not find a "Year, Value" header row.');
-
-      const years = [];
-      const values = [];
-      for (let i=headerRow+1; i<rows.length; i++){
-        const r = rows[i] || [];
-        const y = r[0], v = r[1];
-        if (y == null || y === "") continue;
-        if (v == null || v === "") continue;
-        years.push(String(y));
-        values.push(Number(v));
-      }
-      if (years.length < 3) throw new Error("Need at least 3 rows of year/value data.");
-      return { years, values };
     }
 
-    async function fetchExcel(path){
+    function parseExcelArrayBuffer(buf){
+  const wb = XLSX.read(buf, { type:"array" });
+  const ws = wb.Sheets["Data"] || wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
+
+  let headerRow = -1;
+  let yearIdx = -1, valueIdx = -1, divIdx = -1, funcIdx = -1, monthIdx = -1;
+
+  // Find a header row containing Year (or Month) and either Value OR multiple series columns
+  for (let i=0; i<rows.length; i++){
+    const r = (rows[i] || []).map(v => String(v ?? "").trim());
+    const lower = r.map(v => v.toLowerCase());
+    const yi = lower.indexOf("year");
+    const mi = lower.indexOf("month");
+    const vi = lower.indexOf("value");
+    if (yi !== -1 || mi !== -1){
+      headerRow = i;
+      yearIdx = (yi !== -1) ? yi : mi;
+      monthIdx = (mi !== -1) ? mi : -1;
+      valueIdx = vi; // may be -1 for multi-column series
+      divIdx = lower.indexOf("division");
+      if (divIdx === -1) divIdx = lower.indexOf("segment");
+      funcIdx = lower.indexOf("function");
+      if (funcIdx === -1) funcIdx = lower.indexOf("org function");
+      if (funcIdx === -1) funcIdx = lower.indexOf("job function");
+      break;
+    }
+  }
+  if (headerRow === -1) throw new Error('Could not find a header row containing "Year" (or "Month").');
+
+  const header = rows[headerRow] || [];
+  const hasValueCol = valueIdx !== -1;
+
+  const seriesByDivFunc = {};
+
+  // Case A: Row-based format: Year, Value, (optional) Division, (optional) Function
+  if (hasValueCol){
+    for (let i=headerRow+1; i<rows.length; i++){
+      const r = rows[i] || [];
+      const y = r[yearIdx];
+      const v = r[valueIdx];
+      if (y == null || y === "") continue;
+      if (v == null || v === "") continue;
+
+      const divRaw = (divIdx !== -1) ? r[divIdx] : "Overview";
+      const funcRaw = (funcIdx !== -1) ? r[funcIdx] : "Overview";
+
+      const div = normalizeDivisionName(divRaw);
+      const fn = normalizeFunctionName(funcRaw);
+
+      if (!seriesByDivFunc[div]) seriesByDivFunc[div] = {};
+      if (!seriesByDivFunc[div][fn]) seriesByDivFunc[div][fn] = { years: [], values: [] };
+
+      seriesByDivFunc[div][fn].years.push(String(y).trim());
+      seriesByDivFunc[div][fn].values.push(Number(v));
+    }
+
+    if (!Object.keys(seriesByDivFunc).length){
+      throw new Error("No usable Year/Value rows found.");
+    }
+
+    // sort each series
+    Object.values(seriesByDivFunc).forEach(funcMap=>{
+      Object.values(funcMap || {}).forEach(s=>{
+        const pairs = (s.years || []).map((yy,idx)=>[yy, s.values[idx]]);
+        pairs.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+        s.years = pairs.map(p=>p[0]);
+        s.values = pairs.map(p=>p[1]);
+      });
+    });
+
+    return { seriesByDivFunc: ensureOverviewDivFuncSeries(seriesByDivFunc) };
+  }
+
+  // Case B: Column-based format: Year, Overview, Division 1, Division 2, ...
+  // Every non-year column is treated as a division/segment series (Functions collapse to Overview).
+  const colDefs = [];
+  for (let c=0; c<header.length; c++){
+    if (c === yearIdx) continue;
+    const name = String(header[c] ?? "").trim();
+    if (!name) continue;
+    const div = normalizeDivisionName(name);
+    colDefs.push({ col: c, div });
+    if (!seriesByDivFunc[div]) seriesByDivFunc[div] = {};
+    if (!seriesByDivFunc[div]["Overview"]) seriesByDivFunc[div]["Overview"] = { years: [], values: [] };
+  }
+  if (!colDefs.length) throw new Error("Found Year column, but no series columns.");
+
+  const records = [];
+  for (let i=headerRow+1; i<rows.length; i++){
+    const r = rows[i] || [];
+    const y = r[yearIdx];
+    if (y == null || y === "") continue;
+
+    const rec = { y: String(y).trim(), vals: {} };
+    let hasAny = false;
+    colDefs.forEach(cd=>{
+      const raw = r[cd.col];
+      if (raw == null || raw === "") {
+        rec.vals[cd.div] = null;
+        return;
+      }
+      const num = Number(raw);
+      if (!Number.isFinite(num)) {
+        rec.vals[cd.div] = null;
+        return;
+      }
+      rec.vals[cd.div] = num;
+      hasAny = true;
+    });
+
+    if (hasAny) records.push(rec);
+  }
+  if (records.length < 3) throw new Error("Need at least 3 rows of data.");
+
+  records.sort((a,b)=>String(a.y).localeCompare(String(b.y)));
+
+  colDefs.forEach(cd=>{
+    const div = cd.div;
+    seriesByDivFunc[div]["Overview"] = { years: records.map(r=>r.y), values: records.map(r=>r.vals[div]) };
+  });
+
+  return { seriesByDivFunc: ensureOverviewDivFuncSeries(seriesByDivFunc) };
+}
+
+async function fetchExcel(path){
       const res = await fetch(path, { cache:"no-store" });
       if (!res.ok) throw new Error(`Fetch failed: ${path}`);
       const buf = await res.arrayBuffer();
       return parseExcelArrayBuffer(buf);
     }
 
-    
     async function fetchExcelFromBases(fileName){
       const errors = [];
       for (const base of DATA_BASES){
@@ -453,17 +1551,70 @@
       }
       throw new Error("Could not load Excel from ./data or ./.data. Details:\n" + errors.join("\n"));
     }
-async function loadFromExcelFolder(){
+
+    function filterToTabs(seriesByDivFunc){
+  const out = {};
+  // Back-compat: if someone passes a single series object, treat as Overview/Overview
+  if (seriesByDivFunc && Array.isArray(seriesByDivFunc.years)){
+    out["Overview"] = { "Overview": seriesByDivFunc };
+    return ensureOverviewDivFuncSeries(out);
+  }
+
+  Object.keys(seriesByDivFunc || {}).forEach(k=>{
+    const div = normalizeDivisionName(k);
+    if (!DIVISION_TABS.includes(div)) return;
+
+    const raw = seriesByDivFunc[k] || {};
+    out[div] = {};
+
+    // If the division value is already a series (legacy), wrap it.
+    if (raw && Array.isArray(raw.years)){
+      out[div]["Overview"] = raw;
+    } else {
+      Object.keys(raw || {}).forEach(fk=>{
+        const fn = normalizeFunctionName(fk);
+        out[div][fn] = raw[fk];
+      });
+    }
+
+    out[div] = ensureAllFunctionsSeries(out[div]);
+  });
+
+  return ensureOverviewDivFuncSeries(out);
+}
+
+    async function loadFromExcelFolder(){
       const pop = await fetchExcelFromBases(FILE_NAMES.population);
       const yos = await fetchExcelFromBases(FILE_NAMES.yos);
       const tig = await fetchExcelFromBases(FILE_NAMES.tig);
       const ret = await fetchExcelFromBases(FILE_NAMES.retire);
-model.years = pop.years;
-      model.population = pop.values;
-      model.avgYearsService = yos.values;
-      model.avgTimeInGrade = tig.values;
-      model.likelyToRetire = ret.values;
 
+      setMetricSeries("population", filterToTabs(pop.seriesByDivFunc));
+      setMetricSeries("avgYearsService", filterToTabs(yos.seriesByDivFunc));
+      setMetricSeries("avgTimeInGrade", filterToTabs(tig.seriesByDivFunc));
+      setMetricSeries("likelyToRetire", filterToTabs(ret.seriesByDivFunc));
+
+      const opt = async (fileName) => {
+        try{ return await fetchExcelFromBases(fileName); }
+        catch(e){ return null; }
+      };
+
+      const oa = await opt(FILE_NAMES.overallAttrition);
+      const ra = await opt(FILE_NAMES.resignationAttrition);
+      const pr = await opt(FILE_NAMES.promotions);
+      const nm = await opt(FILE_NAMES.newToManagement);
+      const goal = await opt(FILE_NAMES.aopGoal);
+
+      setMetricSeries("overallAttrition", filterToTabs(oa?.seriesByDivFunc || {}));
+      setMetricSeries("resignationAttrition", filterToTabs(ra?.seriesByDivFunc || {}));
+      setMetricSeries("promotions", filterToTabs(pr?.seriesByDivFunc || {}));
+      setMetricSeries("newToManagement", filterToTabs(nm?.seriesByDivFunc || {}));
+      setMetricSeries("aopGoal", filterToTabs(goal?.seriesByDivFunc || {}));
+
+      model.currentDivision = "Overview";
+      model.currentFunction = "Overview";
+      model.currentSubFunction = "Overview";
+      rebuildDivisionTabs();
       hideBanner();
     }
 
@@ -473,6 +1624,7 @@ model.years = pop.years;
         const key = EXPECTED_NAMES[f.name];
         if (key) map[key] = f;
       }
+
       const missing = ["population","yos","tig","retire"].filter(k => !map[k]);
       if (missing.length){
         throw new Error("Missing expected filenames. Please upload: population.xlsx, avg_years_service.xlsx, avg_time_in_grade.xlsx, likely_to_retire.xlsx");
@@ -490,76 +1642,864 @@ model.years = pop.years;
       const tig = parseExcelArrayBuffer(await readBuf(map.tig));
       const ret = parseExcelArrayBuffer(await readBuf(map.retire));
 
-      model.years = pop.years;
-      model.population = pop.values;
-      model.avgYearsService = yos.values;
-      model.avgTimeInGrade = tig.values;
-      model.likelyToRetire = ret.values;
+      setMetricSeries("population", filterToTabs(pop.seriesByDivFunc));
+      setMetricSeries("avgYearsService", filterToTabs(yos.seriesByDivFunc));
+      setMetricSeries("avgTimeInGrade", filterToTabs(tig.seriesByDivFunc));
+      setMetricSeries("likelyToRetire", filterToTabs(ret.seriesByDivFunc));
 
+      const oa = map.overallAttrition ? parseExcelArrayBuffer(await readBuf(map.overallAttrition)) : null;
+      const ra = map.resignationAttrition ? parseExcelArrayBuffer(await readBuf(map.resignationAttrition)) : null;
+      const pr = map.promotions ? parseExcelArrayBuffer(await readBuf(map.promotions)) : null;
+      const nm = map.newToManagement ? parseExcelArrayBuffer(await readBuf(map.newToManagement)) : null;
+
+      setMetricSeries("overallAttrition", filterToTabs(oa?.seriesByDivFunc || {}));
+      setMetricSeries("resignationAttrition", filterToTabs(ra?.seriesByDivFunc || {}));
+      setMetricSeries("promotions", filterToTabs(pr?.seriesByDivFunc || {}));
+      setMetricSeries("newToManagement", filterToTabs(nm?.seriesByDivFunc || {}));
+      setMetricSeries("aopGoal", filterToTabs(goal?.seriesByDivFunc || {}));
+
+      model.currentDivision = "Overview";
+      model.currentFunction = "Overview";
+      model.currentSubFunction = "Overview";
+      rebuildDivisionTabs();
       hideBanner();
     }
 
-    function genRandomFiveYears(){
-      // Generates monthly points for the last 60 months (5 years)
-      const now = new Date();
-      const labels = [];
-      const endY = now.getFullYear();
-      const endM = now.getMonth() + 1; // 1-12
+    
+    
+    // ========= Full_Data bundled mode (fetch from ./Full_Data) =========
+    // This mode expects a sibling folder next to index.html:
+    //   Full_Data/
+    //     manifest.json
+    //     Overview/<metric files>
+    //     Division/<Division Name>/<metric files>
+    //     Division/<Division Name>/Functions/<Function Name>/<metric files>
+    //
+    // Note: Browsers typically block fetch() from file://. For this mode, open via a local server
+    // (e.g., `python -m http.server`) or host it (GitHub Pages).
 
-      let y = endY, m = endM;
-      for (let i=0; i<60; i++){
-        labels.push(`${y}-${String(m).padStart(2,"0")}`);
-        m -= 1;
-        if (m === 0){ m = 12; y -= 1; }
-      }
-      labels.reverse();
-
-      // population: base 850–1200 with monthly random walk
-      let p = 850 + Math.random()*350;
-      const pop = labels.map(()=>{
-        p = p + (Math.random()*30 - 10); // slight upward bias
-        p = Math.max(600, p);
-        return Math.round(p);
-      });
-
-      // yos: 6–12 with gentle monthly drift
-      let yosV = 6.5 + Math.random()*4;
-      const yos = labels.map(()=>{
-        yosV = yosV + (Math.random()*0.15 - 0.03);
-        yosV = Math.max(4.5, Math.min(16, yosV));
-        return Math.round(yosV*10)/10;
-      });
-
-      // tig: 2.2–5.0 with drift
-      let tigV = 2.2 + Math.random()*1.3;
-      const tig = labels.map(()=>{
-        tigV = tigV + (Math.random()*0.12 - 0.02);
-        tigV = Math.max(1.5, Math.min(6.5, tigV));
-        return Math.round(tigV*10)/10;
-      });
-
-      // retire: counts derived from pop with a % rate (stored as count, UI displays %)
-      const ret = pop.map(v=>{
-        const rate = 0.04 + Math.random()*0.06;
-        return Math.round(v * rate);
-      });
-
-      model = {
-        years: labels,
-        population: pop,
-        avgYearsService: yos,
-        avgTimeInGrade: tig,
-        likelyToRetire: ret
-      };
-
-      showBanner(`<b>Generated data</b> is active. Switch back to <b>Excel (./data)</b> to reload from files.`);
+    function isFullDataMode(){
+      return (document.getElementById("dataMode")?.value === "full");
     }
 
-    function renderAll(){
+    function urlJoin(base, ...segs){
+      const clean = String(base || "").replace(/\/+$/,"");
+      const rest = (segs || []).map(s => encodeURIComponent(String(s))).join("/");
+      return rest ? `${clean}/${rest}` : clean;
+    }
+
+    function fullFolderPath(div, fn, subFn){
+      const d = div || "Overview";
+      const f = fn || "Overview";
+      const s = subFn || "Overview";
+      if (d === "Overview"){
+        return urlJoin(FULL_DATA_BASE, "Overview");
+      }
+      if (f && f !== "Overview"){
+        if (s && s !== "Overview"){
+          return urlJoin(FULL_DATA_BASE, "Division", d, "Functions", f, "Sub Function", s);
+        }
+        return urlJoin(FULL_DATA_BASE, "Division", d, "Functions", f);
+      }
+      return urlJoin(FULL_DATA_BASE, "Division", d);
+    }
+
+    async function fetchJson(path){
+      const res = await fetch(path, { cache:"no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    async function loadFromBundledFullData(){
+      // Reset any picked-folder state
+      model.folder = null;
+      model.folderLoaded = {};
+      model.full = { basePath: FULL_DATA_BASE, manifest: null, loaded: {} };
+
+      // Clear existing series so Full_Data is the source of truth
+      Object.keys(model.series || {}).forEach(k=>{ model.series[k] = {}; });
+
+      let mf;
+      try{
+        mf = await fetchJson(urlJoin(FULL_DATA_BASE, FULL_DATA_MANIFEST));
+      }catch(err){
+        showBanner(
+          `<b>Couldn’t load <code>${FULL_DATA_BASE}/${FULL_DATA_MANIFEST}</code>.</b>
+           <span class="small">
+             Make sure the <code>Full_Data</code> folder sits next to this HTML file and you’re opening the page via a local server (not <code>file://</code>).
+             You can also use <b>Pick Data Folder</b> instead.
+           </span>`
+        );
+        return false;
+      }
+
+      model.full.manifest = mf;
+
+      const divisions = Array.isArray(mf.divisions) ? mf.divisions.slice() : [];
+      divisions.sort(naturalSort);
+
+      model.divisionTabs = ["Overview", ...divisions];
+
+      model.functionTabsByDivision = {};
+      const fbd = mf.functionsByDivision || {};
+      for (const d of divisions){
+        const funcs = Array.isArray(fbd[d]) ? fbd[d].slice() : [];
+        funcs.sort(naturalSort);
+        model.functionTabsByDivision[d] = ["Overview", ...funcs];
+      }
+
+      model.subFunctionTabsByDivisionFunction = {};
+      const sbd = mf.subFunctionsByDivisionFunction || {};
+      for (const d of divisions){
+        const funcs = (model.functionTabsByDivision[d] || []).filter(x => x !== "Overview");
+        model.subFunctionTabsByDivisionFunction[d] = {};
+        for (const fn of funcs){
+          const subs = (sbd[d] && Array.isArray(sbd[d][fn])) ? sbd[d][fn].slice() : [];
+          subs.sort(naturalSort);
+          if (subs.length){
+            model.subFunctionTabsByDivisionFunction[d][fn] = ["Overview", ...subs];
+          }
+        }
+      }
+
+      model.currentDivision = "Overview";
+      model.currentFunction = "Overview";
+      model.currentSubFunction = "Overview";
+
+      hideBanner();
+      rebuildDivisionTabs();
+      await ensureFullDataSeriesLoaded("Overview", "Overview", "Overview");
+      return true;
+    }
+
+    async function ensureFullDataSeriesLoaded(div, fn, subFn){
+      if (!isFullDataMode()) return;
+
+      const useDiv = div || "Overview";
+      const useFn = (useDiv === "Overview") ? "Overview" : (fn || "Overview");
+      const useSub = (useDiv === "Overview" || useFn === "Overview") ? "Overview" : (subFn || "Overview");
+      const cacheKey = `${useDiv}::${useFn}::${useSub}`;
+      if (model.full?.loaded?.[cacheKey]) return;
+
+      const folderUrl = fullFolderPath(useDiv, useFn, useSub);
+
+      // Try metrics.json first (optional)
+      try{
+        const mj = await fetchJson(urlJoin(folderUrl, "metrics.json"));
+        Object.keys(FOLDER_METRIC_FILES).forEach(metricKey=>{
+          const arr = readMetricArrayFromJson(mj, metricKey);
+          if (Array.isArray(arr)){
+            putSeries(metricKey, useDiv, useFn, useSub, toSeriesFromJsonArray(arr));
+          }
+        });
+        model.full.loaded[cacheKey] = true;
+        return;
+      }catch(e){
+        // Fall back to Excel files
+      }
+
+      for (const [metricKey, fname] of Object.entries(FOLDER_METRIC_FILES)){
+        try{
+          const parsed = await fetchExcel(urlJoin(folderUrl, fname));
+          const sbd = parsed?.seriesByDivFunc || {};
+          const firstDiv = sbd["Overview"] ? "Overview" : (Object.keys(sbd)[0] || "Overview");
+          const firstFnObj = sbd[firstDiv] || {};
+          const firstFn = firstFnObj["Overview"] ? "Overview" : (Object.keys(firstFnObj)[0] || "Overview");
+          const series = firstFnObj[firstFn] || { years:[], values:[] };
+          putSeries(metricKey, useDiv, useFn, useSub, series);
+        }catch(e){
+          // ignore missing metric
+        }
+      }
+
+      model.full.loaded[cacheKey] = true;
+    }
+
+
+    // ========= Folder mode (Divisions/Functions) =========
+    // Expected folder layout (picked via "Pick Data Folder"):
+    // <root>/
+    //   Overview/metrics.json
+    //   Division/<Division Name>/metrics.json
+    //   Division/<Division Name>/Functions/<Function Name>/metrics.json
+    //   Division/<Division Name>/Functions/<Function Name>/Sub Function/<Sub Function Name>/metrics.json
+    //
+    // If metrics.json is missing, the loader will also try per-folder Excel files:
+    // population.xlsx, avg_years_service.xlsx, avg_time_in_grade.xlsx, likely_to_retire.xlsx,
+    // overall_attrition.xlsx, resignation_attrition.xlsx, promotions.xlsx, new_to_management_roles.xlsx
+
+    const FOLDER_METRIC_FILES = {
+      population: FILE_NAMES.population,
+      avgYearsService: FILE_NAMES.yos,
+      avgTimeInGrade: FILE_NAMES.tig,
+      likelyToRetire: FILE_NAMES.retire,
+      aopGoal: FILE_NAMES.aopGoal,
+      overallAttrition: FILE_NAMES.overallAttrition,
+      resignationAttrition: FILE_NAMES.resignationAttrition,
+      promotions: FILE_NAMES.promotions,
+      newToManagement: FILE_NAMES.newToManagement,
+    };
+
+    const METRIC_JSON_KEYS = {
+      population: ["population","headcount","hc"],
+      avgYearsService: ["avgYearsService","avg_years_service","years_service","yos"],
+      avgTimeInGrade: ["avgTimeInGrade","avg_time_in_grade","time_in_grade","tig"],
+      likelyToRetire: ["likelyToRetire","likely_to_retire","retire","retirement_eligible"],
+      aopGoal: ["aopGoal","aop_goal","aop_goal_headcount","aop","goal"],
+      overallAttrition: ["overallAttrition","overall_attrition","attrition_overall","overall_attr"],
+      resignationAttrition: ["resignationAttrition","resignation_attrition","attrition_resignation","resign_attr"],
+      promotions: ["promotions","promotion_count"],
+      newToManagement: ["newToManagement","new_to_management","new_to_management_roles","ntm"],
+    };
+
+    async function safeGetDir(parent, name){
+      try{ return await parent.getDirectoryHandle(name, { create:false }); }catch(e){ return null; }
+    }
+    async function safeGetFile(parent, name){
+      try{ return await parent.getFileHandle(name, { create:false }); }catch(e){ return null; }
+    }
+    function naturalSort(a,b){
+      return String(a).localeCompare(String(b), undefined, { numeric:true, sensitivity:"base" });
+    }
+
+
+    async function ensureFolderSubFunctionTabs(div, fn){
+      if (!isFolderMode()) return;
+      const d = div || "Overview";
+      const f = fn || "Overview";
+      if (d === "Overview" || f === "Overview") return;
+
+      if (!model.subFunctionTabsByDivisionFunction) model.subFunctionTabsByDivisionFunction = {};
+      if (!model.subFunctionTabsByDivisionFunction[d]) model.subFunctionTabsByDivisionFunction[d] = {};
+      // Reset current list for this selection
+      delete model.subFunctionTabsByDivisionFunction[d][f];
+
+      const fHandle = model.folder.functionHandlesByDivision?.[d]?.[f] || null;
+      if (!fHandle) return;
+
+      const subRoot = await safeGetDir(fHandle, "Sub Function")
+        || await safeGetDir(fHandle, "Sub Functions")
+        || await safeGetDir(fHandle, "SubFunction")
+        || await safeGetDir(fHandle, "SUB FUNCTION")
+        || null;
+
+      if (!subRoot) return;
+
+      const subs = [];
+      if (!model.folder.subFunctionHandlesByDivisionFunction) model.folder.subFunctionHandlesByDivisionFunction = {};
+      if (!model.folder.subFunctionHandlesByDivisionFunction[d]) model.folder.subFunctionHandlesByDivisionFunction[d] = {};
+      if (!model.folder.subFunctionHandlesByDivisionFunction[d][f]) model.folder.subFunctionHandlesByDivisionFunction[d][f] = {};
+
+      for await (const [name, handle] of subRoot.entries()){
+        if (handle && handle.kind === "directory"){
+          subs.push(name);
+          model.folder.subFunctionHandlesByDivisionFunction[d][f][name] = handle;
+        }
+      }
+      subs.sort(naturalSort);
+      if (subs.length){
+        model.subFunctionTabsByDivisionFunction[d][f] = ["Overview", ...subs];
+      }
+    }
+
+    async function pickDataFolder(){
+      if (!window.showDirectoryPicker){
+        showBanner(`<b>Folder pick not supported</b> in this browser. Try Chrome/Edge, or use Pick Data Folder.`);
+        return;
+      }
+      try{
+        const root = await window.showDirectoryPicker();
+        await loadFromPickedFolder(root);
+        document.getElementById("dataMode").value = "folder";
+        hideBanner();
+        rebuildDivisionTabs();
+        await ensureFolderSeriesLoaded("Overview", "Overview", "Overview");
+        renderAll();
+      }catch(err){
+        // user canceled or denied
+      }
+    }
+
+    async function loadFromPickedFolder(rootHandle){
+      model.folder = {
+        root: rootHandle,
+        overview: null,
+        divisionRoot: null,
+        divisionHandles: {},
+        functionRootByDivision: {},
+        functionHandlesByDivision: {}
+      };
+      model.folderLoaded = {};
+      // Clear existing in-memory series so folder data is the source of truth
+      Object.keys(model.series || {}).forEach(k=>{ model.series[k] = {}; });
+      model.divisionTabs = null;
+      model.functionTabsByDivision = null;
+      model.subFunctionTabsByDivisionFunction = {};
+
+      // Find Overview folder (optional)
+      model.folder.overview = await safeGetDir(rootHandle, "Overview")
+        || await safeGetDir(rootHandle, "OVERVIEW")
+        || null;
+
+      // Find Division root
+      model.folder.divisionRoot = await safeGetDir(rootHandle, "Division")
+        || await safeGetDir(rootHandle, "Divisions")
+        || await safeGetDir(rootHandle, "DIVISION")
+        || await safeGetDir(rootHandle, "DIVISIONS")
+        || null;
+
+      const divisions = [];
+      if (model.folder.divisionRoot){
+        for await (const [name, h] of model.folder.divisionRoot.entries()){
+          if (h.kind === "directory"){
+            divisions.push(name);
+            model.folder.divisionHandles[name] = h;
+          }
+        }
+      }
+
+      divisions.sort(naturalSort);
+      model.divisionTabs = ["Overview", ...divisions];
+
+      model.functionTabsByDivision = {};
+      for (const div of divisions){
+        const divHandle = model.folder.divisionHandles[div];
+        model.folder.functionHandlesByDivision[div] = {};
+        const funcRoot = await safeGetDir(divHandle, "Functions")
+          || await safeGetDir(divHandle, "FUNCTIONS")
+          || await safeGetDir(divHandle, "functions")
+          || null;
+
+        model.folder.functionRootByDivision[div] = funcRoot;
+
+        const fnNames = [];
+        if (funcRoot){
+          for await (const [fn, fh] of funcRoot.entries()){
+            if (fh.kind === "directory"){
+              fnNames.push(fn);
+              model.folder.functionHandlesByDivision[div][fn] = fh;
+            }
+          }
+        }
+        fnNames.sort(naturalSort);
+        model.functionTabsByDivision[div] = ["Overview", ...fnNames];
+      }
+
+      model.currentDivision = "Overview";
+      model.currentFunction = "Overview";
+      model.currentSubFunction = "Overview";
+    }
+
+    function putSeries(metricKey, div, fn, subFn, series){
+      const d = div || "Overview";
+      const f = fn || "Overview";
+      const s = subFn || "Overview";
+      if (!model.series[metricKey]) model.series[metricKey] = {};
+      if (!model.series[metricKey][d]) model.series[metricKey][d] = {};
+      if (!model.series[metricKey][d][f]) model.series[metricKey][d][f] = {};
+      // Back-compat: if a series object was stored at [d][f], wrap it
+      if (model.series[metricKey][d][f] && Array.isArray(model.series[metricKey][d][f].years)){
+        model.series[metricKey][d][f] = { "Overview": model.series[metricKey][d][f] };
+      }
+      model.series[metricKey][d][f][s] = series;
+    }
+
+    async function getFolderDataHandle(div, fn, subFn){
+      if (!model.folder?.root) return null;
+      const d = div || "Overview";
+      const f = fn || "Overview";
+      const s = subFn || "Overview";
+
+      if (d === "Overview"){
+        return model.folder.overview;
+      }
+      const divHandle = model.folder.divisionHandles?.[d];
+      if (!divHandle) return null;
+
+      if (f && f !== "Overview"){
+        const fHandle = model.folder.functionHandlesByDivision?.[d]?.[f] || null;
+        if (!fHandle) return null;
+        if (s && s !== "Overview"){
+          // Cache: locate /Functions/<Function>/Sub Function and then the selected subfolder
+          if (!model.folder.subFunctionHandlesByDivisionFunction) model.folder.subFunctionHandlesByDivisionFunction = {};
+          if (!model.folder.subFunctionHandlesByDivisionFunction[d]) model.folder.subFunctionHandlesByDivisionFunction[d] = {};
+          if (!model.folder.subFunctionHandlesByDivisionFunction[d][f]) model.folder.subFunctionHandlesByDivisionFunction[d][f] = {};
+
+          let subHandle = model.folder.subFunctionHandlesByDivisionFunction[d][f][s] || null;
+          if (!subHandle){
+            const subRoot = await safeGetDir(fHandle, "Sub Function")
+              || await safeGetDir(fHandle, "Sub Functions")
+              || await safeGetDir(fHandle, "SubFunction")
+              || await safeGetDir(fHandle, "SUB FUNCTION")
+              || null;
+            if (!subRoot) return fHandle;
+            subHandle = await safeGetDir(subRoot, s) || null;
+            if (subHandle){
+              model.folder.subFunctionHandlesByDivisionFunction[d][f][s] = subHandle;
+            }
+          }
+          return subHandle || fHandle;
+        }
+        return fHandle;
+      }
+      return divHandle;
+    }
+
+    function normalizeMonthLabel(raw){
+      if (raw == null) return null;
+      const s = String(raw).trim();
+      // Accept YYYY-MM, YYYY/MM, YYYYMM, or Excel-ish dates
+      const m1 = s.match(/^(\d{4})[-\/](\d{1,2})$/);
+      if (m1){
+        const y = m1[1];
+        const mm = String(Math.max(1, Math.min(12, Number(m1[2])))).padStart(2,"0");
+        return `${y}-${mm}`;
+      }
+      const m2 = s.match(/^(\d{4})(\d{2})$/);
+      if (m2){
+        const y = m2[1];
+        const mm = String(Math.max(1, Math.min(12, Number(m2[2])))).padStart(2,"0");
+        return `${y}-${mm}`;
+      }
+      // If it's just a year, keep it (charts will still render)
+      if (/^\d{4}$/.test(s)) return s;
+      return s;
+    }
+
+    function toSeriesFromJsonArray(arr){
+      const years = [];
+      const values = [];
+      (arr || []).forEach(rec=>{
+        if (rec == null) return;
+        const y = normalizeMonthLabel(rec.month ?? rec.Month ?? rec.year ?? rec.Year ?? rec.date ?? rec.Date);
+        const v = rec.value ?? rec.Value ?? rec.val ?? rec.Val;
+        if (y == null || y === "") return;
+        if (v == null || v === "" || !Number.isFinite(Number(v))) return;
+        years.push(String(y));
+        values.push(Number(v));
+      });
+      // sort by label (works for YYYY-MM)
+      const pairs = years.map((yy,i)=>[yy, values[i]]);
+      pairs.sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+      return { years: pairs.map(p=>p[0]), values: pairs.map(p=>p[1]) };
+    }
+
+    function readMetricArrayFromJson(json, metricKey){
+      const keys = METRIC_JSON_KEYS[metricKey] || [metricKey];
+      for (const k of keys){
+        if (json && Object.prototype.hasOwnProperty.call(json, k)) return json[k];
+      }
+      // try case-insensitive match
+      const lowerMap = {};
+      Object.keys(json || {}).forEach(k=>{ lowerMap[String(k).toLowerCase()] = k; });
+      for (const k of keys){
+        const hit = lowerMap[String(k).toLowerCase()];
+        if (hit) return json[hit];
+      }
+      return null;
+    }
+
+    async function ensureFolderSeriesLoaded(div, fn, subFn){
+      if (!(document.getElementById("dataMode")?.value === "folder") || !model.folder?.root) return;
+
+      const useDiv = div || "Overview";
+      const useFn = (useDiv === "Overview") ? "Overview" : (fn || "Overview");
+      const useSub = (useDiv === "Overview" || useFn === "Overview") ? "Overview" : (subFn || "Overview");
+      const cacheKey = `${useDiv}::${useFn}::${useSub}`;
+      if (model.folderLoaded?.[cacheKey]) return;
+
+      const dirHandle = await getFolderDataHandle(useDiv, useFn, useSub);
+      if (!dirHandle){
+        showBanner(`<b>Folder data not found</b> for <b>${useDiv}</b>${(useDiv==="Overview")?"":` / <b>${useFn}</b>`}${(useDiv==="Overview"||useFn==="Overview"||useSub==="Overview")?"":` / <b>${useSub}</b>`}. Make sure your picked folder has <code>Overview/</code> and <code>Division/</code> subfolders.`);
+        return;
+      }
+
+      // Prefer metrics.json
+      const metricsFile = await safeGetFile(dirHandle, "metrics.json");
+      if (metricsFile){
+        try{
+          const file = await metricsFile.getFile();
+          const json = JSON.parse(await file.text());
+          Object.keys(FOLDER_METRIC_FILES).forEach(metricKey=>{
+            const arr = readMetricArrayFromJson(json, metricKey);
+            if (Array.isArray(arr)){
+              putSeries(metricKey, useDiv, useFn, useSub, toSeriesFromJsonArray(arr));
+            }
+          });
+          model.folderLoaded[cacheKey] = true;
+          return;
+        }catch(e){
+          // fall through to Excel
+        }
+      }
+
+      // Fallback: per-metric Excel files inside the folder
+      for (const [metricKey, fname] of Object.entries(FOLDER_METRIC_FILES)){
+        const fh = await safeGetFile(dirHandle, fname);
+        if (!fh) continue;
+        try{
+          const file = await fh.getFile();
+          const buf = await file.arrayBuffer();
+          const parsed = parseExcelArrayBuffer(buf);
+          const sbd = parsed?.seriesByDivFunc || {};
+          const firstDiv = sbd["Overview"] ? "Overview" : (Object.keys(sbd)[0] || "Overview");
+          const firstFnObj = sbd[firstDiv] || {};
+          const firstFn = firstFnObj["Overview"] ? "Overview" : (Object.keys(firstFnObj)[0] || "Overview");
+          const series = firstFnObj[firstFn] || { years:[], values:[] };
+          putSeries(metricKey, useDiv, useFn, useSub, series);
+        }catch(e){
+          // ignore this metric
+        }
+      }
+
+      model.folderLoaded[cacheKey] = true;
+    }
+
+function genRandomData(){
+  // Generates monthly points for the last 60 months (5 years)
+  const now = new Date();
+  const labels = [];
+  const endY = now.getFullYear();
+  const endM = now.getMonth() + 1; // 1-12
+
+  let y = endY, m = endM;
+  for (let i=0; i<60; i++){
+    labels.push(`${y}-${String(m).padStart(2,"0")}`);
+    m -= 1;
+    if (m === 0){ m = 12; y -= 1; }
+  }
+  labels.reverse();
+
+  // Build per-division synthetic series
+  const mkWalk = (start, step, minV, maxV, roundFn)=> {
+    let v = start;
+    return labels.map(()=>{
+      v = v + (Math.random()*step - step*0.4);
+      v = Math.max(minV, Math.min(maxV, v));
+      return roundFn(v);
+    });
+  };
+
+  const jitter = (amp)=> (Math.random()*amp - amp/2);
+
+  // Overview base
+  let p0 = 850 + Math.random()*350;
+  const popOverview = mkWalk(p0, 30, 600, 2000, (v)=>Math.round(v));
+
+  const yosOverview = mkWalk(6.5 + Math.random()*4, 0.15, 4.5, 16, (v)=>Math.round(v*10)/10);
+  const tigOverview = mkWalk(2.2 + Math.random()*1.3, 0.12, 1.5, 6.5, (v)=>Math.round(v*10)/10);
+
+  const retOverview = popOverview.map(v=>{
+    const rate = 0.04 + Math.random()*0.06;
+    return Math.round(v * rate);
+  });
+
+  let oaV = 9 + Math.random()*6;   // 9–15%
+  let raV = 4 + Math.random()*4;   // 4–8%
+  let prV = 10 + Math.random()*10; // 10–20
+  let nmV = 3 + Math.random()*4;   // 3–7
+
+  const overallAttrOverview = labels.map(()=>{
+    oaV = oaV + (Math.random()*1.2 - 0.5);
+    oaV = Math.max(3, Math.min(25, oaV));
+    return Math.round(oaV*10)/10;
+  });
+
+  const resignAttrOverview = labels.map((_,i)=>{
+    raV = raV + (Math.random()*0.9 - 0.4);
+    raV = Math.max(1, Math.min((overallAttrOverview[i] ?? 8) - 0.3, raV));
+    return Math.round(raV*10)/10;
+  });
+
+  const promosOverview = labels.map(()=>{
+    prV = prV + (Math.random()*3 - 1.3);
+    prV = Math.max(0, Math.min(40, prV));
+    return Math.round(prV);
+  });
+
+  const ntmOverview = labels.map(()=>{
+    nmV = nmV + (Math.random()*2 - 0.8);
+    nmV = Math.max(0, Math.min(20, nmV));
+    return Math.round(nmV);
+  });
+
+  // Store series: metric -> division -> function -> {years, values}
+  const put = (metricKey, div, fn, values) => {
+    if (!model.series[metricKey]) model.series[metricKey] = {};
+    if (!model.series[metricKey][div]) model.series[metricKey][div] = {};
+    model.series[metricKey][div][fn] = { years: labels, values };
+  };
+
+  const FUNCTIONS = FUNCTION_TABS.filter(x => x !== "Overview");
+
+  const addFunctionVariants = (metricKey, div, baseValues, kind) => {
+    // Always store Overview
+    put(metricKey, div, "Overview", baseValues);
+
+    FUNCTIONS.forEach((fn, idx)=>{
+      const f = idx + 1; // 1..8
+      if (kind === "count"){
+        const scale = 0.45 + f * 0.07 + (Math.random()*0.04 - 0.02); // ~0.52..1.01
+        const vals = (baseValues || []).map(v => (v == null) ? null : Math.max(0, Math.round(v * scale + jitter(10))));
+        put(metricKey, div, fn, vals);
+      } else if (kind === "avg"){
+        const shift = (f - 4.5) * 0.15 + (Math.random()*0.12 - 0.06);
+        const vals = (baseValues || []).map(v => (v == null) ? null : Math.max(0, Math.round((v + shift + jitter(0.25))*10)/10));
+        put(metricKey, div, fn, vals);
+      } else if (kind === "pct"){
+        const shift = (f - 4.5) * 0.35 + (Math.random()*0.25 - 0.12);
+        const vals = (baseValues || []).map(v => (v == null) ? null : Math.round(Math.max(0, Math.min(40, v + shift + jitter(1.0))) * 10)/10);
+        put(metricKey, div, fn, vals);
+      } else {
+        put(metricKey, div, fn, baseValues);
+      }
+    });
+  };
+
+  // Overview (Functions 1..8 are variants of Overview)
+  addFunctionVariants("population","Overview",popOverview,"count");
+  addFunctionVariants("avgYearsService","Overview",yosOverview,"avg");
+  addFunctionVariants("avgTimeInGrade","Overview",tigOverview,"avg");
+  addFunctionVariants("likelyToRetire","Overview",retOverview,"count");
+  addFunctionVariants("overallAttrition","Overview",overallAttrOverview,"pct");
+  addFunctionVariants("resignationAttrition","Overview",resignAttrOverview,"pct");
+  addFunctionVariants("promotions","Overview",promosOverview,"count");
+  addFunctionVariants("newToManagement","Overview",ntmOverview,"count");
+
+  // Divisions are scaled variants of Overview (each division also has Functions 1..8 variants)
+  for (let i=1; i<=5; i++){
+    const div = `Division ${i}`;
+    const scale = 0.55 + Math.random()*0.55; // 0.55–1.10
+    const pop = popOverview.map(v=>Math.max(0, Math.round(v * scale + jitter(14))));
+    const yos = yosOverview.map(v=>Math.max(0, Math.round((v + jitter(0.45))*10)/10));
+    const tig = tigOverview.map(v=>Math.max(0, Math.round((v + jitter(0.35))*10)/10));
+    const ret = pop.map(v=>{
+      const rate = 0.03 + Math.random()*0.08;
+      return Math.round(v * rate);
+    });
+
+    const oa = overallAttrOverview.map(v=>{
+      const j = jitter(1.8);
+      return Math.round(Math.max(1, Math.min(30, v + j))*10)/10;
+    });
+    const ra = resignAttrOverview.map((v,idx)=>{
+      const j = jitter(1.3);
+      return Math.round(Math.max(0.5, Math.min((oa[idx] ?? 10) - 0.2, v + j))*10)/10;
+    });
+
+    const pr = promosOverview.map(v=>Math.max(0, Math.round(v * scale + jitter(3))));
+    const nm = ntmOverview.map(v=>Math.max(0, Math.round(v * scale + jitter(2))));
+
+    addFunctionVariants("population",div,pop,"count");
+    addFunctionVariants("avgYearsService",div,yos,"avg");
+    addFunctionVariants("avgTimeInGrade",div,tig,"avg");
+    addFunctionVariants("likelyToRetire",div,ret,"count");
+    addFunctionVariants("overallAttrition",div,oa,"pct");
+    addFunctionVariants("resignationAttrition",div,ra,"pct");
+    addFunctionVariants("promotions",div,pr,"count");
+    addFunctionVariants("newToManagement",div,nm,"count");
+  }
+
+  model.currentDivision = "Overview";
+  model.currentFunction = "Overview";
+  rebuildDivisionTabs();
+  showBanner(`<b>Generated data</b> is active. Switch back to <b>Excel (./data)</b> to reload from files.`);
+}
+
+
+    function updateScopeTitle(){
+      if (!scopeTitleEl) return;
+
+      const d = (model.currentDivision || "Overview");
+      const f = (d === "Overview") ? "Overview" : (model.currentFunction || "Overview");
+      const s = (d === "Overview" || f === "Overview") ? "Overview" : (model.currentSubFunction || "Overview");
+
+      // Build "Division -- Function -- Sub Function", but avoid repeating "Overview"
+      const parts = [d, f, s];
+
+      // Remove consecutive duplicates (e.g., Overview -- Overview)
+      const compact = [];
+      for (const p of parts){
+        if (compact.length && compact[compact.length-1] === p) continue;
+        compact.push(p);
+      }
+
+      // If multiple Overviews exist, keep only one "Overview"
+      const overviewCount = compact.filter(x => x === "Overview").length;
+      let finalParts = compact;
+      if (overviewCount > 1){
+        if (compact.every(x => x === "Overview")){
+          finalParts = ["Overview"];
+        } else {
+          const firstOverview = compact.indexOf("Overview");
+          finalParts = compact.filter((x, i) => x !== "Overview" || i === firstOverview);
+        }
+      }
+
+      // If the most specific levels are Overview, prefer a shorter title
+      // Division != Overview & Function == Overview & Sub == Overview => "Division -- Overview"
+      if (d !== "Overview" && f === "Overview" && s === "Overview") finalParts = [d, "Overview"];
+      // Division == Overview => just "Overview"
+      if (d === "Overview") finalParts = ["Overview"];
+
+      scopeTitleEl.textContent = finalParts.join(" -- ");
+    }
+
+    
+    function renderYtdNetHeadcount(popAll, yearsAll){
+      const subEl = document.getElementById("ytdSub");
+
+      const pad2 = (n)=>String(n).padStart(2,'0');
+      const setCell = (id, txt)=>{ const el = document.getElementById(id); if (el) el.textContent = txt; return el; };
+      const clearAll = ()=>{
+        for (let m=1;m<=12;m++){
+          setCell(`ytdHC_${pad2(m)}`, "—");
+          const ng = document.getElementById(`ytdNG_${pad2(m)}`);
+          if (ng){
+            ng.textContent = "—";
+            ng.classList.remove("netPos","netNeg","netZero");
+          }
+          setCell(`ytdGO_${pad2(m)}`, "—");
+        }
+      };
+
+      if (!yearsAll || yearsAll.length === 0){
+        clearAll();
+        if (subEl) subEl.textContent = "Year to date";
+        return;
+      }
+
+      const latestLbl = yearsAll[yearsAll.length - 1];
+      const currentYear = String(latestLbl).slice(0,4);
+
+      // Headcount for current year
+      const idxs = [];
+      for (let i=0; i<yearsAll.length; i++){
+        const lbl = String(yearsAll[i] ?? "");
+        if (lbl.startsWith(currentYear + "-")) idxs.push(i);
+      }
+
+      const labels = idxs.map(i => yearsAll[i]);
+      const vals = idxs.map(i => popAll[i]);
+
+      const hcByMonth = new Map();
+      for (let i=0; i<labels.length; i++){
+        const lbl = String(labels[i] ?? "");
+        const m = Number(lbl.slice(5,7));
+        if (!Number.isFinite(m) || m<1 || m>12) continue;
+        const v = vals[i];
+        if (v == null) continue;
+        hcByMonth.set(m, v);
+      }
+
+      // Baseline for YTD changes: Dec prior year if available, else first available month in current year
+      let baseline = null;
+      const prevDecLabel = `${Number(currentYear) - 1}-12`;
+      for (let i=0; i<yearsAll.length; i++){
+        if (String(yearsAll[i]) === prevDecLabel){
+          baseline = popAll[i];
+          break;
+        }
+      }
+      if (baseline == null){
+        for (let m=1; m<=12; m++){
+          if (hcByMonth.has(m)) { baseline = hcByMonth.get(m); break; }
+        }
+      }
+
+      const latestVal = [...vals].reverse().find(v => v != null);
+      if (subEl){
+        subEl.textContent = `Year to date (${currentYear}) • As of ${shortMonthYear(latestLbl)}`;
+      }
+
+      // AOP Goal series (read from aop_goal.xlsx / metrics.json via the same folder loaders)
+      const div = model.currentDivision || "Overview";
+      const fn = model.currentFunction || "Overview";
+      const sf = model.currentSubFunction || "Overview";
+      const goalS = getSeries("aopGoal", div, fn, sf);
+      const goalAll = alignToYears(goalS, yearsAll);
+
+      const goalByMonth = new Map();
+      if (goalAll && goalAll.length){
+        for (let i=0; i<yearsAll.length; i++){
+          const lbl = String(yearsAll[i] ?? "");
+          if (!lbl.startsWith(currentYear + "-")) continue;
+          const m = Number(lbl.slice(5,7));
+          if (!Number.isFinite(m) || m<1 || m>12) continue;
+          const g = goalAll[i];
+          if (g == null) continue;
+          goalByMonth.set(m, g);
+        }
+      }
+
+      // If AOP Goal data is missing for this scope/year, synthesize a +5% by Dec goal (linear ramp)
+      // using the baseline headcount (Dec prior year if available, else first available month in current year).
+      const synthStart = (baseline != null) ? baseline : latestVal;
+      if (synthStart != null){
+        const hasAnyGoal = goalByMonth && goalByMonth.size && goalByMonth.size > 0;
+        for (let m=1; m<=12; m++){
+          if (hasAnyGoal && goalByMonth.has(m)) continue; // keep provided goals if present
+          const t = (m - 1) / 11; // Jan=0 … Dec=1
+          const g = Math.round(Number(synthStart) * (1 + 0.05 * t));
+          goalByMonth.set(m, g);
+        }
+      }
+
+      // Populate table (rows: Headcount, Net Monthly Growth, Cumulative Growth, AOP Goal; cols: Jan-Dec)
+      let prev = (baseline != null) ? baseline : null;
+      for (let m=1; m<=12; m++){
+        const hc = hcByMonth.get(m);
+        setCell(`ytdHC_${pad2(m)}`, (hc == null) ? "—" : fmtInt(hc));
+
+        // Net Monthly Growth = month-over-month change (Jan compares to Dec prior year baseline when available)
+        const nmEl = document.getElementById(`ytdNG_${pad2(m)}`);
+        if (nmEl){
+          nmEl.classList.remove("netPos","netNeg","netZero");
+          if (hc == null || prev == null){
+            nmEl.textContent = "—";
+          }else{
+            const netM = (hc ?? 0) - (prev ?? 0);
+            nmEl.textContent = `${netM >= 0 ? "+" : ""}${fmtInt(netM)}`;
+            nmEl.classList.add(netM > 0 ? "netPos" : (netM < 0 ? "netNeg" : "netZero"));
+          }
+        }
+
+        // Cumulative Growth = change vs baseline (Dec prior year if available; else first available month in year)
+        const cgEl = document.getElementById(`ytdCG_${pad2(m)}`);
+        if (cgEl){
+          cgEl.classList.remove("netPos","netNeg","netZero");
+          if (hc == null || baseline == null){
+            cgEl.textContent = "—";
+          }else{
+            const cum = (hc ?? 0) - (baseline ?? 0);
+            cgEl.textContent = `${cum >= 0 ? "+" : ""}${fmtInt(cum)}`;
+            cgEl.classList.add(cum > 0 ? "netPos" : (cum < 0 ? "netNeg" : "netZero"));
+          }
+        }
+
+        // Advance prev for the next month (only when current month has headcount)
+        if (hc != null) prev = hc;
+
+        const g = goalByMonth.get(m);
+        setCell(`ytdGO_${pad2(m)}`, (g == null) ? "—" : fmtInt(g));
+      }
+    }
+
+function renderAll(){
+      const div = model.currentDivision || "Overview";
+      const fn = model.currentFunction || "Overview";
+      const sf = model.currentSubFunction || "Overview";
+
+      updateScopeTitle();
+
+      const popS = getSeries("population", div, fn, sf);
+      const baseYears = popS.years || [];
+
       const windowN = Number(document.getElementById("windowSize").value);
       const requestedMonths = windowN * 12;
-      const availableMonths = model.years.length;
+      const availableMonths = baseYears.length;
       const effectiveMonths = Math.min(requestedMonths, availableMonths);
+
       const spanLabel = spanLabelFromMonths(effectiveMonths);
       const trendLabel = trendLabelFromMonths(effectiveMonths);
 
@@ -567,80 +2507,166 @@ model.years = pop.years;
         ? `Last ${windowN} years`
         : `Last ${windowN} years (available: ${spanLabel})`;
 
-      // Update the per-card trend label to match the effective window
-      document.querySelectorAll('.trendLabel').forEach(el => {
-        el.textContent = trendLabel;
+      document.querySelectorAll('.trendLabel').forEach(el => { el.textContent = trendLabel; });
+
+      // Update section title based on the slider value
+      const fiveYearTitleEl = document.getElementById('fiveYearTrendTitle');
+      if (fiveYearTitleEl) fiveYearTitleEl.textContent = yearTrendTitle(windowN);
+
+
+      const yearsAll = baseYears;
+      const years = sliceLast(yearsAll, effectiveMonths);
+
+      // Align all series to population years
+      const popAll = alignToYears(popS, yearsAll);
+      const yosAll = alignToYears(getSeries("avgYearsService", div, fn), yearsAll);
+      const tigAll = alignToYears(getSeries("avgTimeInGrade", div, fn), yearsAll);
+      const retAll = alignToYears(getSeries("likelyToRetire", div, fn), yearsAll);
+
+      const pop = sliceLast(popAll, effectiveMonths);
+      const yos = sliceLast(yosAll, effectiveMonths);
+      const tig = sliceLast(tigAll, effectiveMonths);
+      const ret = sliceLast(retAll, effectiveMonths);
+
+      // 5-year section metrics
+      const popLatest = lastNumber(pop);
+      const popStart = firstNumber(pop) ?? popLatest;
+      document.getElementById("popValue").textContent = (popLatest == null) ? "—" : fmtInt(popLatest);
+      deltaPill(document.getElementById("popDelta"), (popLatest ?? 0) - (popStart ?? 0), true);
+      const popAvg = avgNonNull(pop);
+      document.getElementById("popAvg").textContent = (popAvg == null) ? `Avg (${spanLabel}) —` : `Avg (${spanLabel}) ${fmtInt(popAvg)}`;
+      const popMed = median(pop);
+      document.getElementById("popMed").textContent = (popMed == null) ? `Median (${spanLabel}) —` : `Median (${spanLabel}) ${fmtInt(popMed)}`;
+
+      const yosLatest = lastNumber(yos);
+      const yosStart = firstNumber(yos) ?? yosLatest;
+      document.getElementById("yosValue").textContent = (yosLatest == null) ? "—" : `${fmt1(yosLatest)} yrs`;
+      deltaPill(document.getElementById("yosDelta"), (yosLatest ?? 0) - (yosStart ?? 0), true);
+      const yosMed = median(yos);
+      document.getElementById("yosMed").textContent = (yosMed == null) ? `Median (${spanLabel}) —` : `Median (${spanLabel}) ${fmt1(yosMed)} yrs`;
+      const yosAvg = avgNonNull(yos);
+      document.getElementById("yosAvg").textContent = (yosAvg == null) ? `Avg (${spanLabel}) —` : `Avg (${spanLabel}) ${fmt1(yosAvg)} yrs`;
+
+      const tigLatest = lastNumber(tig);
+      const tigStart = firstNumber(tig) ?? tigLatest;
+      document.getElementById("tigValue").textContent = (tigLatest == null) ? "—" : `${fmt1(tigLatest)} yrs`;
+      deltaPill(document.getElementById("tigDelta"), (tigLatest ?? 0) - (tigStart ?? 0), true);
+      const tigAvg = avgNonNull(tig);
+      document.getElementById("tigAvg").textContent = (tigAvg == null) ? `Avg (${spanLabel}) —` : `Avg (${spanLabel}) ${fmt1(tigAvg)} yrs`;
+      const tigMed = median(tig);
+      document.getElementById("tigMed").textContent = (tigMed == null) ? `Median (${spanLabel}) —` : `Median (${spanLabel}) ${fmt1(tigMed)} yrs`;
+
+      // Likely to retire rate (counts -> % of population)
+      const retRateSeries = ret.map((v,i) => {
+        const p = pop[i];
+        if (p == null || p <= 0 || v == null) return null;
+        return (v / p) * 100;
       });
 
-      const years = sliceLast(model.years, effectiveMonths);
-      const pop = sliceLast(model.population, effectiveMonths);
-      const yos = sliceLast(model.avgYearsService, effectiveMonths);
-      const tig = sliceLast(model.avgTimeInGrade, effectiveMonths);
-      const ret = sliceLast(model.likelyToRetire, effectiveMonths);
-const popLatest = pop.at(-1);
-      const popStart = pop.at(0) ?? popLatest;
-      document.getElementById("popValue").textContent = fmtInt(popLatest);
-      deltaPill(document.getElementById("popDelta"), popLatest - popStart, true);
-      const popAvg = pop.reduce((a,b)=>a+b,0) / (pop.length || 1);
-      document.getElementById("popAvg").textContent = `Avg (${spanLabel}) ${fmtInt(popAvg)}`;
-      const popMed = median(pop);
-      document.getElementById("popMed").textContent = `Median (${spanLabel}) ${fmtInt(popMed)}`;
+      const retRateLatest = lastNumber(retRateSeries);
+      const retRateStart = firstNumber(retRateSeries) ?? retRateLatest;
 
-      const popCagrVal = cagr(pop[0], popLatest, pop.length-1);
-      const yosLatest = yos.at(-1);
-      const yosStart = yos.at(0) ?? yosLatest;
-      document.getElementById("yosValue").textContent = `${fmt1(yosLatest)} yrs`;
-      deltaPill(document.getElementById("yosDelta"), yosLatest - yosStart, true);
-      const yosSorted = [...yos].slice().sort((a,b)=>a-b);
-      const yosMid = Math.floor(yosSorted.length / 2);
-      const yosMed = (yosSorted.length === 0) ? 0 : (yosSorted.length % 2 ? yosSorted[yosMid] : (yosSorted[yosMid-1] + yosSorted[yosMid]) / 2);
-      document.getElementById("yosMed").textContent = `Median (${spanLabel}) ${fmt1(yosMed)} yrs`;
-      const yosAvg = yos.reduce((a,b)=>a+b,0) / (yos.length || 1);
-      document.getElementById("yosAvg").textContent = `Avg (${spanLabel}) ${fmt1(yosAvg)} yrs`;
-
-
-      const tigLatest = tig.at(-1);
-      const tigStart = tig.at(0) ?? tigLatest;
-      document.getElementById("tigValue").textContent = `${fmt1(tigLatest)} yrs`;
-      deltaPill(document.getElementById("tigDelta"), tigLatest - tigStart, true);
-      const tigAvg = tig.reduce((a,b)=>a+b,0) / (tig.length || 1);
-      document.getElementById("tigAvg").textContent = `Avg (${spanLabel}) ${fmt1(tigAvg)} yrs`;
-      const tigMed = median(tig);
-      document.getElementById("tigMed").textContent = `Median (${spanLabel}) ${fmt1(tigMed)} yrs`;
-      const retLatest = ret.at(-1);
-      const retStart = ret.at(0) ?? retLatest;
-      const popLatestForRet = pop.at(-1) ?? 0;
-      const popStartForRet = pop.at(0) ?? popLatestForRet;
-      const retRateLatest = popLatestForRet > 0 ? (retLatest / popLatestForRet) * 100 : 0;
-      const retRateStart = popStartForRet > 0 ? (retStart / popStartForRet) * 100 : 0;
-      document.getElementById("retValue").textContent = `${retRateLatest.toFixed(1)}%`;
-      deltaPill(document.getElementById("retDelta"), retRateLatest - retRateStart, false, "pp");
-      const retRateSeries = ret.map((v,i) => (pop[i] > 0 ? (v / pop[i]) * 100 : 0));
-const retAvg = retRateSeries.reduce((a,b)=>a+b,0) / (retRateSeries.length || 1);
-      document.getElementById("retAvg").textContent = `Avg (${spanLabel}) ${retAvg.toFixed(1)}%`;
+      document.getElementById("retValue").textContent = (retRateLatest == null) ? "—" : `${Number(retRateLatest).toFixed(1)}%`;
+      deltaPill(document.getElementById("retDelta"), (retRateLatest ?? 0) - (retRateStart ?? 0), false, "%");
+      const retAvg = avgNonNull(retRateSeries);
+      document.getElementById("retAvg").textContent = (retAvg == null) ? `Avg (${spanLabel}) —` : `Avg (${spanLabel}) ${retAvg.toFixed(1)}%`;
       const retMed = median(retRateSeries);
-      document.getElementById("retMed").textContent = `Median (${spanLabel}) ${retMed.toFixed(1)}%`;
-
+      document.getElementById("retMed").textContent = (retMed == null) ? `Median (${spanLabel}) —` : `Median (${spanLabel}) ${Number(retMed).toFixed(1)}%`;
 
       makeLineChart("chartPopulation","Population",years,pop,(v)=>fmtInt(v));
       makeLineChart("chartYOS","Avg Years of Service",years,yos,(v)=>`${fmt1(v)} yrs`);
       makeLineChart("chartTIG","Avg Time in Grade",years,tig,(v)=>`${fmt1(v)} yrs`);
       makeLineChart("chartRetire","Likely to Retire Rate",years,retRateSeries,(v)=>`${Number(v).toFixed(1)}%`);
+
+      // Year-over-year (last 12 months) section (within effective window)
+      const yoyMonths = Math.min(12, years.length);
+      const yoySpan = spanLabelFromMonths(yoyMonths);
+      const yoyYears = sliceLast(years, yoyMonths);
+
+      const oaAll = alignToYears(getSeries("overallAttrition", div, fn), yearsAll);
+      const raAll = alignToYears(getSeries("resignationAttrition", div, fn), yearsAll);
+      const prAll = alignToYears(getSeries("promotions", div, fn), yearsAll);
+      const nmAll = alignToYears(getSeries("newToManagement", div, fn), yearsAll);
+
+      const oaFull = sliceLast(oaAll, effectiveMonths);
+      const raFull = sliceLast(raAll, effectiveMonths);
+      const prFull = sliceLast(prAll, effectiveMonths);
+      const nmFull = sliceLast(nmAll, effectiveMonths);
+
+      const oa = asPercentSeries(sliceLast(oaFull, yoyMonths));
+      const ra = asPercentSeries(sliceLast(raFull, yoyMonths));
+      const pr = sliceLast(prFull, yoyMonths);
+      const nm = sliceLast(nmFull, yoyMonths);
+
+      // Overall Attrition
+      const oaLatest = lastNumber(oa);
+      const oaStart = firstNumber(oa) ?? oaLatest;
+      document.getElementById("oaValue").textContent = (oaLatest == null) ? "—" : `${Number(oaLatest).toFixed(1)}%`;
+      deltaPill(document.getElementById("oaDelta"), (oaLatest ?? 0) - (oaStart ?? 0), false, "%");
+      const oaAvg = avgNonNull(oa);
+      document.getElementById("oaAvg").textContent = (oaAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${oaAvg.toFixed(1)}%`;
+      const oaMed = median(oa);
+      document.getElementById("oaMed").textContent = (oaMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${Number(oaMed).toFixed(1)}%`;
+      makeLineChart12m("chartOverallAttrition","Overall Attrition",yoyYears,oa,(v)=>`${Number(v).toFixed(1)}%`);
+
+      // Resignation Attrition
+      const raLatest = lastNumber(ra);
+      const raStart = firstNumber(ra) ?? raLatest;
+      document.getElementById("raValue").textContent = (raLatest == null) ? "—" : `${Number(raLatest).toFixed(1)}%`;
+      deltaPill(document.getElementById("raDelta"), (raLatest ?? 0) - (raStart ?? 0), false, "%");
+      const raAvg = avgNonNull(ra);
+      document.getElementById("raAvg").textContent = (raAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${raAvg.toFixed(1)}%`;
+      const raMed = median(ra);
+      document.getElementById("raMed").textContent = (raMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${Number(raMed).toFixed(1)}%`;
+      makeLineChart12m("chartResignationAttrition","Resignation Attrition",yoyYears,ra,(v)=>`${Number(v).toFixed(1)}%`);
+
+      // Promotions
+      const prLatest = lastNumber(pr);
+      const prStart = firstNumber(pr) ?? prLatest;
+      document.getElementById("prValue").textContent = (prLatest == null) ? "—" : fmtInt(prLatest);
+      deltaPill(document.getElementById("prDelta"), (prLatest ?? 0) - (prStart ?? 0), true);
+      const prAvg = avgNonNull(pr);
+      document.getElementById("prAvg").textContent = (prAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${fmtInt(prAvg)}`;
+      const prMed = median(pr);
+      document.getElementById("prMed").textContent = (prMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${fmtInt(prMed)}`;
+      makeLineChart12m("chartPromotions","Promotions",yoyYears,pr,(v)=>fmtInt(v));
+
+      // New to Management
+      const nmLatest = lastNumber(nm);
+      const nmStart = firstNumber(nm) ?? nmLatest;
+      document.getElementById("nmValue").textContent = (nmLatest == null) ? "—" : fmtInt(nmLatest);
+      deltaPill(document.getElementById("nmDelta"), (nmLatest ?? 0) - (nmStart ?? 0), true);
+      const nmAvg = avgNonNull(nm);
+      document.getElementById("nmAvg").textContent = (nmAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${fmtInt(nmAvg)}`;
+      const nmMed = median(nm);
+      document.getElementById("nmMed").textContent = (nmMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${fmtInt(nmMed)}`;
+      makeLineChart12m("chartNewToManagement","New to Management",yoyYears,nm,(v)=>fmtInt(v));
+
+      // YTD Net Headcount Gain (current year)
+      renderYtdNetHeadcount(popAll, yearsAll);
+
     }
 
     function exportCSV(){
+      const div = model.currentDivision || "Overview";
+      const fn = model.currentFunction || "Overview";
+      const sf = model.currentSubFunction || "Overview";
+      const popS = getSeries("population", div, fn, sf);
+      const yearsAll = popS.years || [];
+
       const windowN = Number(document.getElementById("windowSize").value);
       const requestedMonths = windowN * 12;
-      const availableMonths = model.years.length;
-      const effectiveMonths = Math.min(requestedMonths, availableMonths);
-      const years = sliceLast(model.years, effectiveMonths);
-      const pop = sliceLast(model.population, effectiveMonths);
-      const yos = sliceLast(model.avgYearsService, effectiveMonths);
-      const tig = sliceLast(model.avgTimeInGrade, effectiveMonths);
-      const ret = sliceLast(model.likelyToRetire, effectiveMonths);
-const rows = [["Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToRetire"]];
+      const effectiveMonths = Math.min(requestedMonths, yearsAll.length);
+
+      const years = sliceLast(yearsAll, effectiveMonths);
+      const pop = sliceLast(alignToYears(popS, yearsAll), effectiveMonths);
+      const yos = sliceLast(alignToYears(getSeries("avgYearsService", div, fn), yearsAll), effectiveMonths);
+      const tig = sliceLast(alignToYears(getSeries("avgTimeInGrade", div, fn), yearsAll), effectiveMonths);
+      const ret = sliceLast(alignToYears(getSeries("likelyToRetire", div, fn), yearsAll), effectiveMonths);
+
+      const rows = [["Division","Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToRetire"]];
       for (let i=0;i<years.length;i++){
-        rows.push([years[i], pop[i], yos[i], tig[i], ret[i]]);
+        rows.push([div, years[i], pop[i], yos[i], tig[i], ret[i]]);
       }
       const csv = rows.map(r=>r.join(",")).join("\n");
       const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
@@ -655,21 +2681,35 @@ const rows = [["Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToR
     }
 
     document.getElementById("windowSize").addEventListener("input", renderAll);
-    document.getElementById("exportBtn").addEventListener("click", exportCSV);
-
     document.getElementById("randomizeBtn").addEventListener("click", ()=>{
       document.getElementById("dataMode").value = "generated";
-      genRandomFiveYears();
+      genRandomData();
       renderAll();
     });
 
     document.getElementById("dataMode").addEventListener("change", async (e)=>{
       const mode = e.target.value;
+
+      if (mode === "full"){
+        const ok = await loadFromBundledFullData();
+        if (ok){
+          renderAll();
+        }
+        return;
+      }
+
+
       if (mode === "generated"){
-        genRandomFiveYears();
+        genRandomData();
         renderAll();
         return;
       }
+
+      if (mode === "folder"){
+        await pickDataFolder();
+        return;
+      }
+
       try{
         await loadFromExcelFolder();
         renderAll();
@@ -678,14 +2718,13 @@ const rows = [["Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToR
           `<b>Couldn’t load Excel files automatically.</b>
            <span class="small">
              This usually happens if you opened the page via <code>file://</code> (browser blocks fetch).
-             Fix: run a local server (see README) <i>or</i> click <b>Upload Excel Files</b>.
+             Fix: run a local server (see README) <i>or</i> click <b>Pick Data Folder</b>.
            </span>`
         );
       }
     });
-
-    document.getElementById("uploadBtn").addEventListener("click", ()=>{
-      document.getElementById("fileInput").click();
+document.getElementById("pickFolderBtn").addEventListener("click", async ()=>{
+      await pickDataFolder();
     });
 
     document.getElementById("fileInput").addEventListener("change", async (e)=>{
@@ -700,18 +2739,33 @@ const rows = [["Year","Population","AvgYearsService","AvgTimeInGrade","LikelyToR
       }
     });
 
+    
     (async function init(){
+      rebuildDivisionTabs();
+
+      // Prefer bundled Full_Data (if present)
+      document.getElementById("dataMode").value = "full";
+      const ok = await loadFromBundledFullData();
+      if (ok){
+        renderAll();
+        return;
+      }
+
+      // Fallback: ./data Excel fetch (or generated if blocked)
+      document.getElementById("dataMode").value = "excel";
       try{
         await loadFromExcelFolder();
       }catch(err){
-        genRandomFiveYears();
+        genRandomData();
         showBanner(
           `<b>Started with generated data</b> because Excel files couldn’t be fetched (common if you opened index.html via file://).
-           <span class="small">To load the provided Excel files, run a local server (README) or use <b>Upload Excel Files</b>.</span>`
+           <span class="small">To load the provided Excel files, run a local server (README) or use <b>Pick Data Folder</b> / <b>Pick Data Folder</b>.</span>`
         );
       }
       renderAll();
     })();
+
   </script>
 </body>
+
 </html>

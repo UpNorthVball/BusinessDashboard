@@ -1,0 +1,85 @@
+{
+  "divisions": [
+    "Division 1",
+    "Division 2",
+    "Division 3",
+    "Division 4",
+    "Division 5"
+  ],
+  "functionsByDivision": {
+    "Division 1": [
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Function 4",
+      "Function 5",
+      "Function 6",
+      "Function 7",
+      "Function 8"
+    ],
+    "Division 2": [
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Function 4",
+      "Function 5",
+      "Function 6",
+      "Function 7",
+      "Function 8"
+    ],
+    "Division 3": [
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Function 4",
+      "Function 5",
+      "Function 6",
+      "Function 7",
+      "Function 8"
+    ],
+    "Division 4": [
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Function 4",
+      "Function 5",
+      "Function 6",
+      "Function 7",
+      "Function 8"
+    ],
+    "Division 5": [
+      "Function 1",
+      "Function 2",
+      "Function 3",
+      "Function 4",
+      "Function 5",
+      "Function 6",
+      "Function 7",
+      "Function 8"
+    ]
+  },
+  "subFunctionsByDivisionFunction": {
+    "Division 1": {
+      "Function 1": [
+        "Sub Function 1",
+        "Sub Function 2",
+        "Sub Function 3"
+      ],
+      "Function 2": [
+        "Sub Function 1",
+        "Sub Function 2"
+      ]
+    },
+    "Division 2": {
+      "Function 4": [
+        "Sub Function 1",
+        "Sub Function 2"
+      ]
+    },
+    "Division 3": {
+      "Function 1": [
+        "Sub Function 1"
+      ]
+    }
+  }
+}
