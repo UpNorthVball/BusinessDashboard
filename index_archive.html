@@ -316,19 +316,12 @@ body{
           <label>Data</label>
           <select id="dataMode">
               <option value="full" selected>Full_Data (bundled)</option>
-                        <option value="roster">Roster (roster.json)</option>
-<option value="excel">Excel (./data)</option>
+            <option value="excel">Excel (./data)</option>
             <option value="folder">Folder (Divisions/Functions)</option>
             <option value="generated">Generated (random)</option>
 </select>
         </div>
 <button class="btn" id="pickFolderBtn" title="Pick a local folder that contains Overview/ and Division/ subfolders.">Pick Data Folder</button>
-        <button class="btn" id="loadRosterBtn" title="Load a roster JSON file (employee-level rows).">Load Roster JSON</button>
-        <input id="rosterInput" type="file" accept=".json,application/json" style="display:none" />
-        <button class="btn" id="loadMovementBtn" title="Load a movement JSON file (employee-level rows for Promotions & New to Management).">Load Movement JSON</button>
-        <input id="movementInput" type="file" accept=".json,application/json" style="display:none" />
-        <button class="btn" id="loadAttritionBtn" title="Load an attrition JSON file (employee-level rows for Overall/Resignation Attrition).">Load Attrition JSON</button>
-        <input id="attritionInput" type="file" accept=".json,application/json" style="display:none" />
         <input id="fileInput" type="file" accept=".xlsx" multiple style="display:none" />
 
         <button class="btn" id="randomizeBtn">Randomize</button>
@@ -345,12 +338,12 @@ body{
         <div class="tabs" id="divisionTabs"></div>
       </div>
       <div class="divisionbar functionbar" id="functionBar">
-        <div class="divLabel" id="level2Label">Business Unit Lvl 4</div>
+        <div class="divLabel">Functions</div>
         <div class="tabs" id="functionTabs"></div>
       </div>
 
       <div class="divisionbar functionbar subfunctionbar" id="subFunctionBar">
-        <div class="divLabel" id="level3Label">Business Unit Lvl 5</div>
+        <div class="divLabel">Sub Functions</div>
         <div class="tabs" id="subFunctionTabs"></div>
       </div>
 
@@ -644,11 +637,7 @@ body{
     const FULL_DATA_BASE = "./Full_Data";
     const FULL_DATA_MANIFEST = "manifest.json";
 
-    
-    const ROSTER_JSON = "./roster.json";
-    const MOVEMENT_JSON = "./movement.json";
-    const ATTRITION_JSON = "./attrition.json";
-const FILE_NAMES = {
+    const FILE_NAMES = {
       population: "population.xlsx",
       yos: "avg_years_service.xlsx",
       tig: "avg_time_in_grade.xlsx",
@@ -708,159 +697,11 @@ const FILE_NAMES = {
     const subFunctionBar = document.getElementById("subFunctionBar");
     const subFunctionTabs = document.getElementById("subFunctionTabs");
 
-    const level2LabelEl = document.getElementById("level2Label");
-    const level3LabelEl = document.getElementById("level3Label");
-
-    model.taxonomy = model.taxonomy || { level2Label: "Business Unit Lvl 4", level3Label: "Business Unit Lvl 5" };
-
-    function applyTaxonomyLabels(){
-      const l2 = model.taxonomy?.level2Label || "Business Unit Lvl 4";
-      const l3 = model.taxonomy?.level3Label || "Business Unit Lvl 5";
-      if (level2LabelEl) level2LabelEl.textContent = l2;
-      if (level3LabelEl) level3LabelEl.textContent = l3;
-    }
-
     const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
     const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
 
     function showBanner(html){ banner.innerHTML = html; banner.style.display = "block"; }
     function hideBanner(){ banner.style.display = "none"; banner.innerHTML = ""; }
-
-
-    // ========= Persistence (keep last loaded data until overridden) =========
-    const SNAPSHOT_DB = "BusinessOverviewDashboard";
-    const SNAPSHOT_STORE = "snapshots";
-    const SNAPSHOT_KEY = "latest";
-    const SNAPSHOT_LS_KEY = "BO_DASH_SNAPSHOT_V1";
-
-    function idbOpen(){
-      return new Promise((resolve, reject)=>{
-        try{
-          if (!("indexedDB" in window)) return reject(new Error("IndexedDB not available"));
-          const req = indexedDB.open(SNAPSHOT_DB, 1);
-          req.onupgradeneeded = () => {
-            const db = req.result;
-            if (!db.objectStoreNames.contains(SNAPSHOT_STORE)){
-              db.createObjectStore(SNAPSHOT_STORE);
-            }
-          };
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error || new Error("IndexedDB open failed"));
-        }catch(e){ reject(e); }
-      });
-    }
-
-    async function idbGet(key){
-      const db = await idbOpen();
-      return await new Promise((resolve, reject)=>{
-        const tx = db.transaction(SNAPSHOT_STORE, "readonly");
-        const st = tx.objectStore(SNAPSHOT_STORE);
-        const req = st.get(key);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => reject(req.error || new Error("IndexedDB get failed"));
-        tx.oncomplete = () => { try{ db.close(); }catch(e){} };
-        tx.onerror = () => { try{ db.close(); }catch(e){} };
-      });
-    }
-
-    async function idbSet(key, val){
-      const db = await idbOpen();
-      return await new Promise((resolve, reject)=>{
-        const tx = db.transaction(SNAPSHOT_STORE, "readwrite");
-        const st = tx.objectStore(SNAPSHOT_STORE);
-        const req = st.put(val, key);
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error || new Error("IndexedDB put failed"));
-        tx.oncomplete = () => { try{ db.close(); }catch(e){} };
-        tx.onerror = () => { try{ db.close(); }catch(e){} };
-      });
-    }
-
-    function buildSnapshot(reason){
-      const dataModeEl = document.getElementById("dataMode");
-      const windowEl = document.getElementById("windowSize");
-      return {
-        version: 1,
-        savedAt: Date.now(),
-        reason: reason || "",
-        ui: {
-          dataMode: dataModeEl ? dataModeEl.value : "full",
-          windowSize: windowEl ? String(windowEl.value) : "5"
-        },
-        model: {
-          currentDivision: model.currentDivision || "Overview",
-          currentFunction: model.currentFunction || "Overview",
-          currentSubFunction: model.currentSubFunction || "Overview",
-          divisionTabs: model.divisionTabs || null,
-          functionTabsByDivision: model.functionTabsByDivision || null,
-          subFunctionTabsByDivisionFunction: model.subFunctionTabsByDivisionFunction || null,
-          taxonomy: model.taxonomy || { level2Label: "Business Unit Lvl 4", level3Label: "Business Unit Lvl 5" },
-          series: model.series || {}
-        }
-      };
-    }
-
-    async function saveSnapshot(reason){
-      const snap = buildSnapshot(reason);
-      try{
-        await idbSet(SNAPSHOT_KEY, snap);
-      }catch(e){
-        try{ localStorage.setItem(SNAPSHOT_LS_KEY, JSON.stringify(snap)); }catch(_){}
-      }
-      return snap;
-    }
-
-    async function loadSnapshot(){
-      try{
-        const s = await idbGet(SNAPSHOT_KEY);
-        if (s && s.model && s.model.series) return s;
-      }catch(e){
-        // fall through
-      }
-      try{
-        const raw = localStorage.getItem(SNAPSHOT_LS_KEY);
-        if (!raw) return null;
-        const s = JSON.parse(raw);
-        if (s && s.model && s.model.series) return s;
-      }catch(e){
-        return null;
-      }
-      return null;
-    }
-
-    function applySnapshot(snap){
-      if (!snap || !snap.model || !snap.model.series) return false;
-
-      // Snapshot is purely data + UI state
-      model.folder = null;
-      model.folderLoaded = {};
-      model.full = null;
-
-      model.series = snap.model.series || model.series;
-      model.divisionTabs = snap.model.divisionTabs || null;
-      model.functionTabsByDivision = snap.model.functionTabsByDivision || null;
-      model.subFunctionTabsByDivisionFunction = snap.model.subFunctionTabsByDivisionFunction || null;
-      model.taxonomy = snap.model.taxonomy || model.taxonomy;
-
-      model.currentDivision = snap.model.currentDivision || "Overview";
-      model.currentFunction = snap.model.currentFunction || "Overview";
-      model.currentSubFunction = snap.model.currentSubFunction || "Overview";
-
-      const dataModeEl = document.getElementById("dataMode");
-      const windowEl = document.getElementById("windowSize");
-      if (dataModeEl && snap.ui && snap.ui.dataMode) dataModeEl.value = snap.ui.dataMode;
-      if (windowEl && snap.ui && snap.ui.windowSize) windowEl.value = snap.ui.windowSize;
-
-      applyTaxonomyLabels();
-      return true;
-    }
-
-    let _saveTimer = null;
-    function scheduleSave(reason){
-      if (_saveTimer) clearTimeout(_saveTimer);
-      _saveTimer = setTimeout(()=>{ saveSnapshot(reason).catch(()=>{}); }, 350);
-    }
-
 
     function deltaPill(el, delta, isGoodWhenUp = true, suffix = "") {
       const dir = (delta > 0) ? "up" : (delta < 0) ? "down" : "flat";
@@ -1040,7 +881,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         await ensureFolderSeriesLoaded(div, "Overview", "Overview");
         rebuildDivisionTabs(); // refresh active state
         renderAll();
-        scheduleSave("select division");
         return;
       }
 
@@ -1052,7 +892,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         rebuildFunctionTabs();
         rebuildDivisionTabs();
         renderAll();
-        scheduleSave("select division");
         return;
       }
 
@@ -1069,7 +908,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
       rebuildFunctionTabs();
       rebuildDivisionTabs(); // refresh active state
       renderAll();
-      scheduleSave("select division");
     }
 
     async function setFunction(fn){
@@ -1082,7 +920,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         await ensureFolderSeriesLoaded(model.currentDivision || "Overview", fn, model.currentSubFunction);
         rebuildFunctionTabs(); // refresh active state
         renderAll();
-        scheduleSave("select bu4");
         return;
       }
 
@@ -1091,7 +928,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         await ensureFullDataSeriesLoaded(model.currentDivision || "Overview", fn, model.currentSubFunction);
         rebuildFunctionTabs();
         renderAll();
-        scheduleSave("select bu4");
         return;
       }
 
@@ -1106,7 +942,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
       }
       rebuildFunctionTabs(); // refresh active state
       renderAll();
-      scheduleSave("select bu4");
     }
 
     function rebuildDivisionTabs(){
@@ -1165,7 +1000,7 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
       // Excel/Generated: derive enabled set from available series (keep prior behavior).
       let avail = null;
       if (!isFolderMode()){
-        const popMetric = model.series?.population || model.series?.avgYearsService || model.series?.avgTimeInGrade || model.series?.likelyToRetire || (model.series ? model.series[Object.keys(model.series)[0]] : {}) || {};
+        const popMetric = model.series?.population || {};
         const divObj = popMetric[div] || popMetric["Overview"] || popMetric[Object.keys(popMetric)[0]] || {};
         avail = (divObj && Array.isArray(divObj.years)) ? ["Overview"] : Object.keys(divObj || {});
       }
@@ -1203,7 +1038,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         await ensureFolderSeriesLoaded(div, fn, model.currentSubFunction);
         rebuildSubFunctionTabs();
         renderAll();
-        scheduleSave("select bu5");
         return;
       }
 
@@ -1212,15 +1046,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
         await ensureFullDataSeriesLoaded(div, fn, model.currentSubFunction);
         rebuildSubFunctionTabs();
         renderAll();
-        scheduleSave("select bu5");
-        return;
-      }
-
-      if (isRosterMode()){
-        hideBanner();
-        rebuildSubFunctionTabs();
-        renderAll();
-        scheduleSave("select bu5");
         return;
       }
 
@@ -1228,7 +1053,6 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
       model.currentSubFunction = "Overview";
       rebuildSubFunctionTabs();
       renderAll();
-      scheduleSave("select bu5");
     }
 
     function rebuildSubFunctionTabs(){
@@ -1738,6 +1562,7 @@ async function fetchExcel(path){
 
   Object.keys(seriesByDivFunc || {}).forEach(k=>{
     const div = normalizeDivisionName(k);
+    if (!DIVISION_TABS.includes(div)) return;
 
     const raw = seriesByDivFunc[k] || {};
     out[div] = {};
@@ -1757,42 +1582,6 @@ async function fetchExcel(path){
 
   return ensureOverviewDivFuncSeries(out);
 }
-
-
-    function deriveTabsFromLoadedSeries(){
-      // Build Division + Business Unit Lvl 4 tab lists from the currently loaded series.
-      // Used for Excel/Generated/Uploaded data where the divisions/BU4 values come from the data itself.
-      try{
-        const popMetric = model.series?.population || model.series?.avgYearsService || model.series?.avgTimeInGrade || model.series?.likelyToRetire || (model.series ? model.series[Object.keys(model.series)[0]] : {}) || {};
-        const divKeys = Object.keys(popMetric || {}).filter(Boolean);
-        if (!divKeys.length) return;
-
-        const divisions = divKeys.filter(d => d !== "Overview").slice().sort(naturalSort);
-        model.divisionTabs = ["Overview", ...divisions];
-
-        model.functionTabsByDivision = model.functionTabsByDivision || {};
-        for (const d of divisions){
-          const divObj = popMetric[d] || {};
-          let funcs = [];
-          if (divObj && Array.isArray(divObj.years)){
-            funcs = ["Overview"];
-          } else {
-            const keys = Object.keys(divObj || {}).filter(Boolean);
-            const rest = keys.filter(f => f !== "Overview").slice().sort(naturalSort);
-            funcs = ["Overview", ...rest];
-          }
-          model.functionTabsByDivision[d] = funcs;
-        }
-
-        // Unless explicitly populated (folder/full modes), hide level-3 tabs
-        model.subFunctionTabsByDivisionFunction = model.subFunctionTabsByDivisionFunction || null;
-
-        applyTaxonomyLabels();
-      }catch(e){
-        // no-op
-      }
-    }
-
 
     async function loadFromExcelFolder(){
       const pop = await fetchExcelFromBases(FILE_NAMES.population);
@@ -1825,10 +1614,8 @@ async function fetchExcel(path){
       model.currentDivision = "Overview";
       model.currentFunction = "Overview";
       model.currentSubFunction = "Overview";
-      deriveTabsFromLoadedSeries();
       rebuildDivisionTabs();
       hideBanner();
-      scheduleSave("load excel");
     }
 
     async function loadFromUploadedFiles(fileList){
@@ -1874,10 +1661,8 @@ async function fetchExcel(path){
       model.currentDivision = "Overview";
       model.currentFunction = "Overview";
       model.currentSubFunction = "Overview";
-      deriveTabsFromLoadedSeries();
       rebuildDivisionTabs();
       hideBanner();
-      scheduleSave("load upload");
     }
 
     
@@ -1897,12 +1682,7 @@ async function fetchExcel(path){
       return (document.getElementById("dataMode")?.value === "full");
     }
 
-    
-
-    function isRosterMode(){
-      return (document.getElementById("dataMode")?.value === "roster");
-    }
-function urlJoin(base, ...segs){
+    function urlJoin(base, ...segs){
       const clean = String(base || "").replace(/\/+$/,"");
       const rest = (segs || []).map(s => encodeURIComponent(String(s))).join("/");
       return rest ? `${clean}/${rest}` : clean;
@@ -1929,578 +1709,6 @@ function urlJoin(base, ...segs){
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
     }
-
-
-    function parseBool(v){
-      if (v === true || v === 1) return true;
-      if (v === false || v === 0) return false;
-      const s = String(v ?? "").trim().toLowerCase();
-      return (s === "1" || s === "true" || s === "yes" || s === "y");
-    }
-
-    function safeNum(v){
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
-    }
-
-    function yearsBetween(dateStrA, dateStrB){
-      if (!dateStrA || !dateStrB) return null;
-      const a = new Date(dateStrA);
-      const b = new Date(dateStrB);
-      const ta = a.getTime(), tb = b.getTime();
-      if (!Number.isFinite(ta) || !Number.isFinite(tb)) return null;
-      return (ta - tb) / (1000*60*60*24*365.25);
-    }
-
-    function makeRosterKey(d,f,s){ return `${d}||${f}||${s}`; }
-
-    function generateSyntheticRosterRows(){
-      // Generates employee-level rows across ~5 years of monthly snapshots.
-      const divisions = [
-        { name:"Engineering", sector:"Tech", bu4:["Platform","Product","Security"] },
-        { name:"Operations", sector:"Corporate", bu4:["Facilities","HR Ops","Biz Ops"] },
-        { name:"Sales", sector:"Commercial", bu4:["Field Sales","Sales Dev","Customer Success"] },
-        { name:"Finance", sector:"Corporate", bu4:["FP&A","Accounting","Procurement"] }
-      ];
-      const bu5Map = {
-        "Platform":["Data","Infra","DevEx"],
-        "Product":["Core","Mobile","Web"],
-        "Security":["GRC","AppSec","SecOps"],
-        "Facilities":["Sites","Events"],
-        "HR Ops":["Benefits","People Services"],
-        "Biz Ops":["Strategy","Program Mgmt"],
-        "Field Sales":["Enterprise","SMB"],
-        "Sales Dev":["Inbound","Outbound"],
-        "Customer Success":["Onboarding","Retention"],
-        "FP&A":["Planning","Analytics"],
-        "Accounting":["Close","Reporting"],
-        "Procurement":["Sourcing","Vendor Mgmt"]
-      };
-
-      // 60 months ending at current month
-      const now = new Date();
-      const end = new Date(now.getFullYear(), now.getMonth(), 1);
-      const months = [];
-      for (let i=59;i>=0;i--){
-        const d = new Date(end.getFullYear(), end.getMonth()-i, 1);
-        const y = d.getFullYear();
-        const m = String(d.getMonth()+1).padStart(2,"0");
-        months.push(`${y}-${m}-01`);
-      }
-
-      const rows = [];
-      for (let mi=0; mi<months.length; mi++){
-        const eff = months[mi];
-        const effDate = new Date(eff);
-
-        // overall headcount slowly trends upward
-        const baseTotal = 520 + Math.round(mi*0.8) + Math.round((Math.sin(mi/6)*12));
-
-        // distribute across divisions
-        const shares = [0.36,0.26,0.24,0.14];
-
-        divisions.forEach((divObj, di)=>{
-          const divHc = Math.max(60, Math.round(baseTotal*shares[di] + (Math.random()*10-5)));
-
-          const bu4s = divObj.bu4;
-          const perBu4 = Math.max(15, Math.floor(divHc / bu4s.length));
-
-          bu4s.forEach((bu4, b4i)=>{
-            const bu4Hc = (b4i === bu4s.length-1)
-              ? (divHc - perBu4*(bu4s.length-1))
-              : (perBu4 + Math.round(Math.random()*6-3));
-
-            const bu5s = bu5Map[bu4] || ["Team A","Team B"];
-            const perBu5 = Math.max(6, Math.floor(bu4Hc / bu5s.length));
-
-            bu5s.forEach((bu5, b5i)=>{
-              const hc = (b5i === bu5s.length-1)
-                ? (bu4Hc - perBu5*(bu5s.length-1))
-                : (perBu5 + Math.round(Math.random()*4-2));
-
-              for (let j=0;j<hc;j++){
-                // service start: 0–25 years before effect date (skewed to shorter)
-                const yosY = Math.min(28, Math.max(0, Math.round(Math.pow(Math.random(), 0.55)*25)));
-                const hire = new Date(
-                  effDate.getFullYear()-yosY,
-                  effDate.getMonth()-Math.floor(Math.random()*12),
-                  1+Math.floor(Math.random()*28)
-                );
-
-                // time in grade: 0–8 years
-                const tig = Math.max(0, Math.min(8, Math.round((Math.pow(Math.random(),0.7)*7)*10)/10));
-                const yos = yearsBetween(eff, hire.toISOString().slice(0,10)) ?? yosY;
-
-                const retireEligible = (yos >= 22)
-                  ? (Math.random() < 0.55)
-                  : (yos >= 18 ? (Math.random() < 0.12) : (Math.random() < 0.03));
-
-                rows.push({
-                  effect_date: eff,
-                  yos_company_service_date: hire.toISOString().slice(0,10),
-                  sector: divObj.sector,
-                  division: divObj.name,
-                  business_unit_lvl4: bu4,
-                  business_unit_lvl5: bu5,
-                  time_in_job_level_years: tig,
-                  is_retirement_eligble: retireEligible ? 1 : 0,
-                  standard_headcount: 1
-                });
-              }
-            });
-          });
-        });
-      }
-      return rows;
-    }
-
-    function buildSeriesFromRosterRows(rows){
-      // Reset any picked-folder/full-data state
-      model.folder = null;
-      model.folderLoaded = {};
-      model.full = null;
-
-      // Clear existing series so roster is the source of truth
-      Object.keys(model.series || {}).forEach(k=>{ model.series[k] = {}; });
-
-      const divSet = new Set();
-      const bu4ByDiv = new Map();       // division -> Set(bu4)
-      const bu5ByDivBu4 = new Map();    // `${div}||${bu4}` -> Set(bu5)
-      const monthSet = new Set();
-
-      const agg = new Map(); // `${div}||${bu4}||${bu5}` -> Map(month -> agg)
-
-      function ensureMonthAgg(key, month){
-        if (!agg.has(key)) agg.set(key, new Map());
-        const mm = agg.get(key);
-        if (!mm.has(month)) mm.set(month, { pop:0, hc:0, yosSum:0, tigSum:0, ret:0 });
-        return mm.get(month);
-      }
-
-      function add(key, month, head, yos, tig, retCount){
-        const a = ensureMonthAgg(key, month);
-        a.pop += head;
-        a.hc += head;
-        if (yos != null) a.yosSum += yos * head;
-        if (tig != null) a.tigSum += tig * head;
-        a.ret += retCount;
-      }
-
-      (rows || []).forEach(r=>{
-        if (!r) return;
-
-        const eff = r.effect_date ?? r.EFFECT_DATE ?? r.effectDate ?? r.month ?? r.Month ?? r.date ?? r.Date;
-        const month = normalizeMonthLabel(String(eff || "").slice(0,7));
-        if (!month) return;
-
-        const div = String(r.division ?? r.Division ?? "Unknown").trim() || "Unknown";
-        const bu4 = String(r.business_unit_lvl4 ?? r.businessUnitLvl4 ?? r.bu4 ?? r.Function ?? "Unknown").trim() || "Unknown";
-        const bu5 = String(r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? r.SubFunction ?? "Unknown").trim() || "Unknown";
-
-        divSet.add(div);
-        if (!bu4ByDiv.has(div)) bu4ByDiv.set(div, new Set());
-        bu4ByDiv.get(div).add(bu4);
-
-        const kdb = `${div}||${bu4}`;
-        if (!bu5ByDivBu4.has(kdb)) bu5ByDivBu4.set(kdb, new Set());
-        bu5ByDivBu4.get(kdb).add(bu5);
-
-        monthSet.add(month);
-
-        const head = safeNum(r.standard_headcount ?? r.standardHeadcount ?? r.standard_headcnt ?? r.standardHeadcnt ?? r.headcount ?? r.Headcount) ?? 1;
-
-        const serviceDate = r.yos_company_service_date ?? r.yosCompanyServiceDate ?? r.yos_company_service_dt ?? r.service_date ?? r.serviceDate;
-        const yos = yearsBetween(`${month}-01`, serviceDate) ?? safeNum(r.yos_years ?? r.yosYears) ?? null;
-
-        const tig = safeNum(r.time_in_job_level_years ?? r.timeInJobLevelYears ?? r.time_in_grade_years ?? r.tig_years ?? r.tigYears);
-        const isRet = parseBool(r.is_retirement_eligble ?? r.is_retirement_eligible ?? r.isRetirementEligble ?? r.isRetirementEligible);
-        const retCount = isRet ? head : 0;
-
-        // Aggregate for overall, division, BU4, and BU5
-        add(makeRosterKey("Overview","Overview","Overview"), month, head, yos, tig, retCount);
-        add(makeRosterKey(div,"Overview","Overview"), month, head, yos, tig, retCount);
-        add(makeRosterKey(div,bu4,"Overview"), month, head, yos, tig, retCount);
-        add(makeRosterKey(div,bu4,bu5), month, head, yos, tig, retCount);
-      });
-
-      const months = Array.from(monthSet).sort(naturalSort);
-
-      function seriesFor(key, type){
-        const mm = agg.get(key) || new Map();
-        const years = months.slice();
-        const values = years.map(m=>{
-          const a = mm.get(m);
-          if (!a) return null;
-          if (type === "pop") return a.pop;
-          if (type === "yos") return (a.hc > 0) ? (a.yosSum / a.hc) : null;
-          if (type === "tig") return (a.hc > 0) ? (a.tigSum / a.hc) : null;
-          if (type === "ret") return a.ret;
-          return null;
-        });
-        return { years, values };
-      }
-
-      // Populate metric series using putSeries (division -> BU4 -> BU5)
-      for (const key of agg.keys()){
-        const parts = key.split("||");
-        const d = parts[0] || "Overview";
-        const f = parts[1] || "Overview";
-        const s = parts[2] || "Overview";
-        putSeries("population", d, f, s, seriesFor(key,"pop"));
-        putSeries("avgYearsService", d, f, s, seriesFor(key,"yos"));
-        putSeries("avgTimeInGrade", d, f, s, seriesFor(key,"tig"));
-        putSeries("likelyToRetire", d, f, s, seriesFor(key,"ret"));
-      }
-
-      // Tabs from roster taxonomy
-      const divisions = Array.from(divSet).sort(naturalSort);
-      model.divisionTabs = ["Overview", ...divisions];
-
-      model.functionTabsByDivision = {};
-      model.subFunctionTabsByDivisionFunction = {};
-
-      for (const d of divisions){
-        const bu4s = Array.from(bu4ByDiv.get(d) || []).sort(naturalSort);
-        model.functionTabsByDivision[d] = ["Overview", ...bu4s];
-
-        model.subFunctionTabsByDivisionFunction[d] = {};
-        for (const b4 of bu4s){
-          const sset = bu5ByDivBu4.get(`${d}||${b4}`) || new Set();
-          const bu5s = Array.from(sset).sort(naturalSort);
-          if (bu5s.length) model.subFunctionTabsByDivisionFunction[d][b4] = ["Overview", ...bu5s];
-        }
-      }
-
-      model.taxonomy = { level2Label: "Business Unit Lvl 4", level3Label: "Business Unit Lvl 5" };
-      applyTaxonomyLabels();
-
-      model.currentDivision = "Overview";
-      model.currentFunction = "Overview";
-      model.currentSubFunction = "Overview";
-
-      rebuildDivisionTabs();
-      scheduleSave("roster loaded");
-    }
-
-    
-    // ========= Movement (Promotions / New to Management) from employee-level JSON =========
-    function buildSeriesFromMovementRows(rows){
-      // Only reset the movement metrics
-      model.series.promotions = {};
-      model.series.newToManagement = {};
-
-      const monthSet = new Set();
-      const agg = new Map(); // `${div}||${bu4}||${bu5}` -> Map(month -> { pr:0, nm:0 })
-
-      function ensure(key, month){
-        if (!agg.has(key)) agg.set(key, new Map());
-        const mm = agg.get(key);
-        if (!mm.has(month)) mm.set(month, { pr:0, nm:0 });
-        return mm.get(month);
-      }
-      function add(key, month, pr, nm){
-        const a = ensure(key, month);
-        a.pr += pr;
-        a.nm += nm;
-      }
-
-      (rows || []).forEach(r=>{
-        if (!r) return;
-        const eff = r.effective_date ?? r.EFFECTIVE_DATE ?? r.effect_date ?? r.effectDate ?? r.month ?? r.Month ?? r.date ?? r.Date;
-        const month = normalizeMonthLabel(String(eff || "").slice(0,7));
-        if (!month) return;
-
-        const div = String(r.division ?? r.Division ?? "Unknown").trim() || "Unknown";
-        const bu4 = String(r.business_unit_lvl4 ?? r.businessUnitLvl4 ?? r.bu4 ?? r.Function ?? "Unknown").trim() || "Unknown";
-        const bu5 = String(r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? r.SubFunction ?? "Unknown").trim() || "Unknown";
-
-        const pr = safeNum(r.promo_cnt ?? r.promoCnt ?? r.promotions ?? r.promotion_cnt) ?? 0;
-        const nm = safeNum(r.new_to_mgmnt ?? r.newToMgmnt ?? r.new_to_management ?? r.newToManagement) ?? 0;
-
-        monthSet.add(month);
-
-        add(makeRosterKey("Overview","Overview","Overview"), month, pr, nm);
-        add(makeRosterKey(div,"Overview","Overview"), month, pr, nm);
-        add(makeRosterKey(div,bu4,"Overview"), month, pr, nm);
-        add(makeRosterKey(div,bu4,bu5), month, pr, nm);
-      });
-
-      const months = Array.from(monthSet).sort(naturalSort);
-
-      function seriesFor(key, which){
-        const mm = agg.get(key) || new Map();
-        const years = months.slice();
-        const values = years.map(m=>{
-          const a = mm.get(m);
-          if (!a) return 0;
-          return (which === "pr") ? a.pr : a.nm;
-        });
-        return { years, values };
-      }
-
-      for (const key of agg.keys()){
-        const [d,f,s] = key.split("||");
-        putSeries("promotions", d || "Overview", f || "Overview", s || "Overview", seriesFor(key,"pr"));
-        putSeries("newToManagement", d || "Overview", f || "Overview", s || "Overview", seriesFor(key,"nm"));
-      }
-    }
-
-    // ========= Attrition (Overall + Resignation) from employee-level JSON =========
-    function buildSeriesFromAttritionRows(rows){
-      model.series.overallAttrition = {};
-      model.series.resignationAttrition = {};
-
-      const monthSet = new Set();
-      const agg = new Map(); // key -> Map(month -> { res:0, denom:0 })
-
-      function ensure(key, month){
-        if (!agg.has(key)) agg.set(key, new Map());
-        const mm = agg.get(key);
-        if (!mm.has(month)) mm.set(month, { res:0, denom:0 });
-        return mm.get(month);
-      }
-      function add(key, month, res, denom){
-        const a = ensure(key, month);
-        a.res += res;
-        a.denom += denom;
-      }
-
-      (rows || []).forEach(r=>{
-        if (!r) return;
-        const eff = r.effective_date ?? r.EFFECTIVE_DATE ?? r.effect_date ?? r.effectDate ?? r.month ?? r.Month ?? r.date ?? r.Date;
-        const month = normalizeMonthLabel(String(eff || "").slice(0,7));
-        if (!month) return;
-
-        const div = String(r.division ?? r.Division ?? "Unknown").trim() || "Unknown";
-        const bu4 = String(r.business_unit_lvl4 ?? r.businessUnitLvl4 ?? r.bu4 ?? r.Function ?? "Unknown").trim() || "Unknown";
-        const bu5 = String(r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? r.SubFunction ?? "Unknown").trim() || "Unknown";
-
-        const res = safeNum(r.resignation_cnt ?? r.resignationCnt ?? r.resignations ?? r.resignation) ?? 0;
-        const denom = safeNum(r.ytd_avg_std_headcnt ?? r.ytdAvgStdHeadcnt ?? r.ytd_avg_standard_headcount ?? r.standard_headcount ?? r.headcount ?? r.standardHeadcount) ?? 0;
-
-        monthSet.add(month);
-
-        add(makeRosterKey("Overview","Overview","Overview"), month, res, denom);
-        add(makeRosterKey(div,"Overview","Overview"), month, res, denom);
-        add(makeRosterKey(div,bu4,"Overview"), month, res, denom);
-        add(makeRosterKey(div,bu4,bu5), month, res, denom);
-      });
-
-      const months = Array.from(monthSet).sort(naturalSort);
-
-      function clamp01(x){ return Math.max(0, Math.min(1, x)); }
-
-      function seriesFor(key, which){
-        const mm = agg.get(key) || new Map();
-        const years = months.slice();
-        const values = years.map(m=>{
-          const a = mm.get(m);
-          if (!a || !a.denom) return null;
-          const resRate = a.res / a.denom; // fraction (0-1)
-          if (which === "res") return clamp01(resRate);
-          // Overall attrition: derived from resignation rate (keeps file schema minimal)
-          return clamp01(resRate * 1.25);
-        });
-        return { years, values };
-      }
-
-      for (const key of agg.keys()){
-        const [d,f,s] = key.split("||");
-        putSeries("resignationAttrition", d || "Overview", f || "Overview", s || "Overview", seriesFor(key,"res"));
-        putSeries("overallAttrition", d || "Overview", f || "Overview", s || "Overview", seriesFor(key,"overall"));
-      }
-    }
-
-    // ========= Synthetic YOY data (if movement.json / attrition.json can't be fetched) =========
-    function _hash01(str){
-      // Simple FNV-1a 32-bit hash -> [0,1)
-      let h = 2166136261;
-      for (let i=0; i<str.length; i++){
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 16777619);
-      }
-      return ((h >>> 0) % 1000000) / 1000000;
-    }
-
-    function generateSyntheticMovementRowsFromRoster(rosterRows){
-      const out = [];
-      (rosterRows || []).forEach(r=>{
-        if (!r) return;
-        const eff = r.effect_date ?? r.EFFECT_DATE ?? r.effectDate ?? r.month ?? r.Month ?? r.date ?? r.Date;
-        const sector = r.sector ?? r.Sector ?? "Unknown";
-        const div = r.division ?? r.Division ?? "Unknown";
-        const bu4 = r.business_unit_lvl4 ?? r.businessUnitLvl4 ?? r.bu4 ?? "Unknown";
-        const bu5 = r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? "Unknown";
-
-        const key = `${eff}|${sector}|${div}|${bu4}|${bu5}`;
-        let promoP = 0.012;
-        let nmP = 0.004;
-
-        const dlow = String(div || "").toLowerCase();
-        if (dlow.startsWith("eng")){ promoP *= 1.2; nmP *= 1.1; }
-        if (dlow.startsWith("operations")){ promoP *= 0.9; nmP *= 0.95; }
-
-        const u = _hash01("promo|" + key);
-        const v = _hash01("nm|" + key);
-
-        out.push({
-          effective_date: String(eff || ""),
-          sector: String(sector || ""),
-          division: String(div || ""),
-          business_unit_lvl4: String(bu4 || ""),
-          business_unit_lvl5: String(bu5 || ""),
-          promo_cnt: (u < promoP) ? 1 : 0,
-          new_to_mgmnt: (v < nmP) ? 1 : 0
-        });
-      });
-      return out;
-    }
-
-    function generateSyntheticAttritionRowsFromRoster(rosterRows){
-      const out = [];
-      (rosterRows || []).forEach(r=>{
-        if (!r) return;
-        const eff = r.effect_date ?? r.EFFECT_DATE ?? r.effectDate ?? r.month ?? r.Month ?? r.date ?? r.Date;
-        const sector = r.sector ?? r.Sector ?? "Unknown";
-        const div = r.division ?? r.Division ?? "Unknown";
-        const bu4 = r.business_unit_lvl4 ?? r.businessUnitLvl4 ?? r.bu4 ?? "Unknown";
-        const bu5 = r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? "Unknown";
-        const head = safeNum(r.standard_headcount ?? r.standardHeadcount ?? r.standard_headcnt ?? r.standardHeadcnt ?? r.headcount ?? r.Headcount) ?? 1;
-
-        const key = `${eff}|${sector}|${div}|${bu4}|${bu5}`;
-        let resignP = 0.0065;
-        const slow = String(sector || "").toLowerCase();
-        if (slow === "tech") resignP *= 1.1;
-        if (slow === "corporate") resignP *= 0.95;
-
-        const u = _hash01("resign|" + key);
-
-        out.push({
-          effective_date: String(eff || ""),
-          sector: String(sector || ""),
-          division: String(div || ""),
-          business_unit_lvl4: String(bu4 || ""),
-          business_unit_lvl5: String(bu5 || ""),
-          resignation_cnt: (u < resignP) ? 1 : 0,
-          ytd_avg_std_headcnt: head
-        });
-      });
-      return out;
-    }
-
-    async function loadFromMovementJson(fallbackRosterRows){
-      try{
-        const data = await fetchJson(MOVEMENT_JSON);
-        const rows = Array.isArray(data) ? data : (data && (data.rows || data.movement || data.data)) || null;
-        if (!Array.isArray(rows)) throw new Error("Movement JSON should be an array of rows");
-        return { rows, source: "file" };
-      }catch(err){
-        const rows = fallbackRosterRows ? generateSyntheticMovementRowsFromRoster(fallbackRosterRows) : [];
-        return { rows, source: "synthetic", error: err };
-      }
-    }
-
-    async function loadFromAttritionJson(fallbackRosterRows){
-      try{
-        const data = await fetchJson(ATTRITION_JSON);
-        const rows = Array.isArray(data) ? data : (data && (data.rows || data.attrition || data.data)) || null;
-        if (!Array.isArray(rows)) throw new Error("Attrition JSON should be an array of rows");
-        return { rows, source: "file" };
-      }catch(err){
-        const rows = fallbackRosterRows ? generateSyntheticAttritionRowsFromRoster(fallbackRosterRows) : [];
-        return { rows, source: "synthetic", error: err };
-      }
-    }
-
-    async function loadFromMovementFile(file){
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const rows = Array.isArray(data) ? data : (data && (data.rows || data.movement || data.data)) || null;
-      if (!Array.isArray(rows)) throw new Error("Movement JSON should be an array of rows");
-      buildSeriesFromMovementRows(rows);
-      scheduleSave("movement loaded");
-      return true;
-    }
-
-    async function loadFromAttritionFile(file){
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const rows = Array.isArray(data) ? data : (data && (data.rows || data.attrition || data.data)) || null;
-      if (!Array.isArray(rows)) throw new Error("Attrition JSON should be an array of rows");
-      buildSeriesFromAttritionRows(rows);
-      scheduleSave("attrition loaded");
-      return true;
-    }
-async function loadFromRosterJson(){
-      let rosterRows = null;
-      const notes = [];
-
-      try{
-        const data = await fetchJson(ROSTER_JSON);
-        rosterRows = Array.isArray(data) ? data : (data && (data.rows || data.employees || data.data)) || null;
-        if (!Array.isArray(rosterRows)) throw new Error("Roster JSON should be an array of employee rows");
-      }catch(err){
-        // Fallback: generate roster so the site still works (common on file://)
-        rosterRows = generateSyntheticRosterRows();
-        notes.push(
-          `<b>Couldn’t fetch <code>${ROSTER_JSON}</code>.</b>
-           <span class="small">Using generated roster data. To load <code>roster.json</code>, run a local server (not <code>file://</code>) or click <b>Load Roster JSON</b>.</span>`
-        );
-      }
-
-      // Build top-4 cards series from roster
-      buildSeriesFromRosterRows(rosterRows);
-
-      // Build YOY cards from movement + attrition JSON (or synthesize from roster if blocked)
-      const mov = await loadFromMovementJson(rosterRows);
-      if (mov.source === "synthetic"){
-        notes.push(
-          `<b>Couldn’t fetch <code>${MOVEMENT_JSON}</code>.</b>
-           <span class="small">Using synthetic movement data for Promotions &amp; New to Management. Click <b>Load Movement JSON</b> to override.</span>`
-        );
-      }
-      buildSeriesFromMovementRows(mov.rows);
-
-      const att = await loadFromAttritionJson(rosterRows);
-      if (att.source === "synthetic"){
-        notes.push(
-          `<b>Couldn’t fetch <code>${ATTRITION_JSON}</code>.</b>
-           <span class="small">Using synthetic attrition data for Overall/Resignation Attrition. Click <b>Load Attrition JSON</b> to override.</span>`
-        );
-      }
-      buildSeriesFromAttritionRows(att.rows);
-
-      if (notes.length) showBanner(notes.join("<br/>")); else hideBanner();
-
-      rebuildDivisionTabs();
-      scheduleSave("roster bundle loaded");
-      return true;
-    }
-
-    async function loadFromRosterFile(file){
-      const text = await file.text();
-      const data = JSON.parse(text);
-      const rosterRows = Array.isArray(data) ? data : (data && (data.rows || data.employees || data.data)) || null;
-      if (!Array.isArray(rosterRows)) throw new Error("Roster JSON should be an array of employee rows");
-
-      buildSeriesFromRosterRows(rosterRows);
-
-      // If the user only loaded roster, synthesize YOY series so all 8 cards work immediately.
-      const movRows = generateSyntheticMovementRowsFromRoster(rosterRows);
-      const attRows = generateSyntheticAttritionRowsFromRoster(rosterRows);
-      buildSeriesFromMovementRows(movRows);
-      buildSeriesFromAttritionRows(attRows);
-
-      showBanner(
-        `<b>Roster loaded.</b>
-         <span class="small">Using synthetic <code>movement</code> + <code>attrition</code> until you load your real JSON files via <b>Load Movement JSON</b> / <b>Load Attrition JSON</b>.</span>`
-      );
-
-      rebuildDivisionTabs();
-      scheduleSave("roster file loaded");
-      return true;
-    }
-
 
     async function loadFromBundledFullData(){
       // Reset any picked-folder state
@@ -2533,7 +1741,7 @@ async function loadFromRosterJson(){
       model.divisionTabs = ["Overview", ...divisions];
 
       model.functionTabsByDivision = {};
-      const fbd = mf.functionsByDivision || mf.businessUnitLvl4ByDivision || mf.business_unit_lvl4_by_division || mf.bu4ByDivision || {};
+      const fbd = mf.functionsByDivision || {};
       for (const d of divisions){
         const funcs = Array.isArray(fbd[d]) ? fbd[d].slice() : [];
         funcs.sort(naturalSort);
@@ -2541,7 +1749,7 @@ async function loadFromRosterJson(){
       }
 
       model.subFunctionTabsByDivisionFunction = {};
-      const sbd = mf.subFunctionsByDivisionFunction || mf.businessUnitLvl5ByDivisionBU4 || mf.business_unit_lvl5_by_division_bu4 || mf.bu5ByDivisionBU4 || {};
+      const sbd = mf.subFunctionsByDivisionFunction || {};
       for (const d of divisions){
         const funcs = (model.functionTabsByDivision[d] || []).filter(x => x !== "Overview");
         model.subFunctionTabsByDivisionFunction[d] = {};
@@ -2561,8 +1769,6 @@ async function loadFromRosterJson(){
       hideBanner();
       rebuildDivisionTabs();
       await ensureFullDataSeriesLoaded("Overview", "Overview", "Overview");
-      applyTaxonomyLabels();
-      scheduleSave("full data");
       return true;
     }
 
@@ -3096,10 +2302,8 @@ function genRandomData(){
 
   model.currentDivision = "Overview";
   model.currentFunction = "Overview";
-  deriveTabsFromLoadedSeries();
   rebuildDivisionTabs();
   showBanner(`<b>Generated data</b> is active. Switch back to <b>Excel (./data)</b> to reload from files.`);
-  scheduleSave("generated");
 }
 
 
@@ -3476,7 +2680,7 @@ function renderAll(){
       URL.revokeObjectURL(url);
     }
 
-    document.getElementById("windowSize").addEventListener("input", ()=>{ renderAll(); scheduleSave("window"); });
+    document.getElementById("windowSize").addEventListener("input", renderAll);
     document.getElementById("randomizeBtn").addEventListener("click", ()=>{
       document.getElementById("dataMode").value = "generated";
       genRandomData();
@@ -3485,14 +2689,6 @@ function renderAll(){
 
     document.getElementById("dataMode").addEventListener("change", async (e)=>{
       const mode = e.target.value;
-
-      if (mode === "roster"){
-        const ok = await loadFromRosterJson();
-        if (ok){
-          renderAll();
-        }
-        return;
-      }
 
       if (mode === "full"){
         const ok = await loadFromBundledFullData();
@@ -3531,70 +2727,7 @@ document.getElementById("pickFolderBtn").addEventListener("click", async ()=>{
       await pickDataFolder();
     });
 
-    
-
-    
-document.getElementById("loadRosterBtn").addEventListener("click", ()=> {
-      const inp = document.getElementById("rosterInput");
-      if (inp) inp.click();
-    });
-
-    document.getElementById("rosterInput").addEventListener("change", async (e)=> {
-      const file = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
-      if (!file) return;
-      try{
-        await loadFromRosterFile(file);
-        document.getElementById("dataMode").value = "roster";
-        renderAll();
-      }catch(err){
-        showBanner(`<b>Roster load failed:</b> ${err.message}`);
-      }finally{
-        e.target.value = "";
-      }
-    });
-
-    document.getElementById("loadMovementBtn").addEventListener("click", ()=> {
-      const inp = document.getElementById("movementInput");
-      if (inp) inp.click();
-    });
-
-    document.getElementById("movementInput").addEventListener("change", async (e)=> {
-      const file = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
-      if (!file) return;
-      try{
-        await loadFromMovementFile(file);
-        document.getElementById("dataMode").value = "roster";
-        renderAll();
-        hideBanner();
-      }catch(err){
-        showBanner(`<b>Movement load failed:</b> ${err.message}`);
-      }finally{
-        e.target.value = "";
-      }
-    });
-
-    document.getElementById("loadAttritionBtn").addEventListener("click", ()=> {
-      const inp = document.getElementById("attritionInput");
-      if (inp) inp.click();
-    });
-
-    document.getElementById("attritionInput").addEventListener("change", async (e)=> {
-      const file = (e.target.files && e.target.files[0]) ? e.target.files[0] : null;
-      if (!file) return;
-      try{
-        await loadFromAttritionFile(file);
-        document.getElementById("dataMode").value = "roster";
-        renderAll();
-        hideBanner();
-      }catch(err){
-        showBanner(`<b>Attrition load failed:</b> ${err.message}`);
-      }finally{
-        e.target.value = "";
-      }
-    });
-
-
-document.getElementById("fileInput").addEventListener("change", async (e)=>{
+    document.getElementById("fileInput").addEventListener("change", async (e)=>{
       const files = e.target.files;
       if (!files || !files.length) return;
       try{
@@ -3608,31 +2741,11 @@ document.getElementById("fileInput").addEventListener("change", async (e)=>{
 
     
     (async function init(){
-      applyTaxonomyLabels();
-
-      // Restore last saved data first (persists across page closes)
-      const snap = await loadSnapshot();
-      if (snap && applySnapshot(snap)){
-        rebuildDivisionTabs();
-        renderAll();
-        const when = new Date(snap.savedAt || Date.now()).toLocaleString();
-        showBanner(`<b>Restored last saved data</b> (${when}). Load new data to override.`);
-        return;
-      }
-
       rebuildDivisionTabs();
-
-      // Prefer roster.json (employee-level) if present
-      document.getElementById("dataMode").value = "roster";
-      let ok = await loadFromRosterJson();
-      if (ok){
-        renderAll();
-        return;
-      }
 
       // Prefer bundled Full_Data (if present)
       document.getElementById("dataMode").value = "full";
-      ok = await loadFromBundledFullData();
+      const ok = await loadFromBundledFullData();
       if (ok){
         renderAll();
         return;
