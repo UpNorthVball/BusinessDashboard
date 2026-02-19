@@ -721,7 +721,7 @@ const FILE_NAMES = {
     }
 
     const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
-    const fmt1 = \(n\) => \(Math\.round\(n \* 10\) / 10\)\.toFixed\(1\);
+    const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
     const fmtPctSmart = (v) => {
       const n = Number(v);
       if (!Number.isFinite(n)) return "—";
@@ -3267,27 +3267,6 @@ function genRandomData(){
       }
 
       scopeTitleEl.textContent = parts.join(" -- ");
-    }
-
-      // If multiple Overviews exist, keep only one "Overview"
-      const overviewCount = compact.filter(x => x === "Overview").length;
-      let finalParts = compact;
-      if (overviewCount > 1){
-        if (compact.every(x => x === "Overview")){
-          finalParts = ["Overview"];
-        } else {
-          const firstOverview = compact.indexOf("Overview");
-          finalParts = compact.filter((x, i) => x !== "Overview" || i === firstOverview);
-        }
-      }
-
-      // If the most specific levels are Overview, prefer a shorter title
-      // Division != Overview & Function == Overview & Sub == Overview => "Division -- Overview"
-      if (d !== "Overview" && f === "Overview" && s === "Overview") finalParts = [d, "Overview"];
-      // Division == Overview => just "Overview"
-      if (d === "Overview") finalParts = ["Overview"];
-
-      scopeTitleEl.textContent = finalParts.join(" -- ");
     }
 
     
