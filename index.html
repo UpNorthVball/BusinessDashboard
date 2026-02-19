@@ -721,10 +721,99 @@ const FILE_NAMES = {
     }
 
     const fmtInt = (n) => new Intl.NumberFormat().format(Math.round(n));
-    const fmt1 = (n) => (Math.round(n * 10) / 10).toFixed(1);
+    const fmt1 = \(n\) => \(Math\.round\(n \* 10\) / 10\)\.toFixed\(1\);
+    const fmtPctSmart = (v) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const dec = (abs > 0 && abs < 1) ? 2 : 1;
+      return n.toFixed(dec) + "%";
+    };
+
 
     function showBanner(html){ banner.innerHTML = html; banner.style.display = "block"; }
     function hideBanner(){ banner.style.display = "none"; banner.innerHTML = ""; }
+// ========= Robustness: dependency fallbacks + friendly error banners =========
+function loadScript(url){
+  return new Promise((resolve, reject)=>{
+    try{
+      const s = document.createElement("script");
+      s.src = url;
+      s.async = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => reject(new Error("Failed to load " + url));
+      document.head.appendChild(s);
+    }catch(e){ reject(e); }
+  });
+}
+
+async function ensureDeps(){
+  const errors = [];
+  // Chart.js fallback (needed for charts)
+  if (typeof Chart === "undefined"){
+    const urls = [
+      "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
+      "https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+    ];
+    let ok = false;
+    for (const u of urls){
+      try{
+        await loadScript(u);
+        if (typeof Chart !== "undefined"){ ok = true; break; }
+      }catch(e){ errors.push(e.message); }
+    }
+    if (!ok) errors.push("Chart.js unavailable (charts will be disabled).");
+  }
+
+  // XLSX fallback (only needed for Excel mode)
+  if (typeof XLSX === "undefined"){
+    const urls = [
+      "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+      "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+    ];
+    let ok = false;
+    for (const u of urls){
+      try{
+        await loadScript(u);
+        if (typeof XLSX !== "undefined"){ ok = true; break; }
+      }catch(e){ errors.push(e.message); }
+    }
+    if (!ok) errors.push("XLSX unavailable (Excel mode will be disabled).");
+  }
+
+  return { hasChart: (typeof Chart !== "undefined"), hasXlsx: (typeof XLSX !== "undefined"), errors };
+}
+
+let _shownDepWarning = false;
+function warnIfMissingDeps(deps){
+  if (!deps) return;
+  const msgs = [];
+  if (!deps.hasChart) msgs.push("Charts are disabled because Chart.js couldn't be loaded (try a different network or allow the CDN).");
+  if (!deps.hasXlsx) msgs.push("Excel mode is disabled because the XLSX library couldn't be loaded.");
+  if (!msgs.length) return;
+  if (_shownDepWarning) return;
+  _shownDepWarning = true;
+  showBanner(`<b>Heads up:</b><br/>${msgs.map(m=>`• ${m}`).join("<br/>")}`);
+}
+
+// Surface runtime errors directly on the page instead of a blank dashboard
+window.addEventListener("error", (ev)=>{
+  try{
+    const msg = ev?.message ? String(ev.message) : "Unknown error";
+    showBanner(`<b>JavaScript error:</b> ${msg}<span class="small"><br/>Open DevTools → Console for details.</span>`);
+  }catch(_){}
+});
+
+window.addEventListener("unhandledrejection", (ev)=>{
+  try{
+    const r = ev?.reason;
+    const msg = (r && r.message) ? r.message : String(r);
+    showBanner(`<b>Promise error:</b> ${msg}<span class="small"><br/>Open DevTools → Console for details.</span>`);
+  }catch(_){}
+});
+
 
 
     // ========= Persistence (keep last loaded data until overridden) =========
@@ -1237,8 +1326,8 @@ function ensureOverviewDivFuncSeries(seriesByDivFunc){
       const div = model.currentDivision || "Overview";
       const fn = model.currentFunction || "Overview";
 
-      // Only show when a specific function is selected (and not Overview / Overview)
-      if (div === "Overview" || fn === "Overview"){
+      // Show BU5 tabs whenever a non-Overview Division is selected (including when BU4 is Overview)
+      if (div === "Overview"){
         subFunctionBar.style.display = "none";
         subFunctionTabs.innerHTML = "";
         model.currentSubFunction = "Overview";
@@ -1310,6 +1399,7 @@ function getSeries(metricKey, division, func, subFunc){
     }
 
     function makeLineChart(canvasId, label, labels, data, tooltipFmt){
+      if (typeof Chart === "undefined") return;
       const ctx = document.getElementById(canvasId);
       if (!ctx) return;
       if (charts[canvasId]) charts[canvasId].destroy();
@@ -1414,6 +1504,7 @@ function getSeries(metricKey, division, func, subFunc){
     }
 
     function makeLineChart12m(canvasId, label, labels, data, tooltipFmt){
+      if (typeof Chart === "undefined") return;
       const ctx = document.getElementById(canvasId);
       if (!ctx) return;
       if (charts[canvasId]) charts[canvasId].destroy();
@@ -1584,6 +1675,7 @@ function getSeries(metricKey, division, func, subFunc){
     }
 
     function parseExcelArrayBuffer(buf){
+      if (typeof XLSX === "undefined") throw new Error("XLSX library not loaded. Excel mode requires network access to load XLSX from a CDN.");
   const wb = XLSX.read(buf, { type:"array" });
   const ws = wb.Sheets["Data"] || wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
@@ -2065,6 +2157,7 @@ function urlJoin(base, ...segs){
 
       const divSet = new Set();
       const bu4ByDiv = new Map();       // division -> Set(bu4)
+      const bu5ByDiv = new Map();      // division -> Set(bu5)
       const bu5ByDivBu4 = new Map();    // `${div}||${bu4}` -> Set(bu5)
       const monthSet = new Set();
 
@@ -2101,6 +2194,9 @@ function urlJoin(base, ...segs){
         if (!bu4ByDiv.has(div)) bu4ByDiv.set(div, new Set());
         bu4ByDiv.get(div).add(bu4);
 
+
+        if (!bu5ByDiv.has(div)) bu5ByDiv.set(div, new Set());
+        bu5ByDiv.get(div).add(bu5);
         const kdb = `${div}||${bu4}`;
         if (!bu5ByDivBu4.has(kdb)) bu5ByDivBu4.set(kdb, new Set());
         bu5ByDivBu4.get(kdb).add(bu5);
@@ -2119,6 +2215,7 @@ function urlJoin(base, ...segs){
         // Aggregate for overall, division, BU4, and BU5
         add(makeRosterKey("Overview","Overview","Overview"), month, head, yos, tig, retCount);
         add(makeRosterKey(div,"Overview","Overview"), month, head, yos, tig, retCount);
+        add(makeRosterKey(div,"Overview",bu5), month, head, yos, tig, retCount);
         add(makeRosterKey(div,bu4,"Overview"), month, head, yos, tig, retCount);
         add(makeRosterKey(div,bu4,bu5), month, head, yos, tig, retCount);
       });
@@ -2164,6 +2261,8 @@ function urlJoin(base, ...segs){
         model.functionTabsByDivision[d] = ["Overview", ...bu4s];
 
         model.subFunctionTabsByDivisionFunction[d] = {};
+        const bu5All = Array.from(bu5ByDiv.get(d) || []).sort(naturalSort);
+        if (bu5All.length) model.subFunctionTabsByDivisionFunction[d]["Overview"] = ["Overview", ...bu5All];
         for (const b4 of bu4s){
           const sset = bu5ByDivBu4.get(`${d}||${b4}`) || new Set();
           const bu5s = Array.from(sset).sort(naturalSort);
@@ -2221,6 +2320,7 @@ function urlJoin(base, ...segs){
 
         add(makeRosterKey("Overview","Overview","Overview"), month, pr, nm);
         add(makeRosterKey(div,"Overview","Overview"), month, pr, nm);
+        add(makeRosterKey(div,"Overview",bu5), month, pr, nm);
         add(makeRosterKey(div,bu4,"Overview"), month, pr, nm);
         add(makeRosterKey(div,bu4,bu5), month, pr, nm);
       });
@@ -2251,18 +2351,26 @@ function urlJoin(base, ...segs){
       model.series.resignationAttrition = {};
 
       const monthSet = new Set();
-      const agg = new Map(); // key -> Map(month -> { res:0, denom:0 })
+      // key -> Map(month -> { res:0, resMax:0, denomSum:0, denomMax:0, n:0 })
+      const agg = new Map();
 
       function ensure(key, month){
         if (!agg.has(key)) agg.set(key, new Map());
         const mm = agg.get(key);
-        if (!mm.has(month)) mm.set(month, { res:0, denom:0 });
+        if (!mm.has(month)) mm.set(month, { res:0, resMax:0, denomSum:0, denomMax:0, n:0 });
         return mm.get(month);
       }
       function add(key, month, res, denom){
         const a = ensure(key, month);
-        a.res += res;
-        a.denom += denom;
+        const r = (typeof res === "number" && Number.isFinite(res)) ? res : 0;
+        a.res += r;
+        a.resMax = Math.max(a.resMax, r);
+
+        if (typeof denom === "number" && Number.isFinite(denom)) {
+          a.denomSum += denom;
+          a.denomMax = Math.max(a.denomMax, denom);
+        }
+        a.n += 1;
       }
 
       (rows || []).forEach(r=>{
@@ -2276,27 +2384,60 @@ function urlJoin(base, ...segs){
         const bu5 = String(r.business_unit_lvl5 ?? r.businessUnitLvl5 ?? r.bu5 ?? r.SubFunction ?? "Unknown").trim() || "Unknown";
 
         const res = safeNum(r.resignation_cnt ?? r.resignationCnt ?? r.resignations ?? r.resignation) ?? 0;
-        const denom = safeNum(r.ytd_avg_std_headcnt ?? r.ytdAvgStdHeadcnt ?? r.ytd_avg_standard_headcount ?? r.standard_headcount ?? r.headcount ?? r.standardHeadcount) ?? 0;
+
+        // ytd_avg_std_headcnt can be:
+        // - individual-level: 1 per employee row (or missing)  -> use row count / sum
+        // - repeated group headcount on each employee row       -> use row count (avoid double-counting)
+        // - aggregated/group-level rows (resignation_cnt > 1)   -> use denomSum/denomMax
+        const denomRaw = safeNum(
+          r.ytd_avg_std_headcnt ??
+          r.ytdAvgStdHeadcnt ??
+          r.ytd_avg_standard_headcount ??
+          r.standard_headcount ??
+          r.headcount ??
+          r.standardHeadcount
+        );
 
         monthSet.add(month);
 
-        add(makeRosterKey("Overview","Overview","Overview"), month, res, denom);
-        add(makeRosterKey(div,"Overview","Overview"), month, res, denom);
-        add(makeRosterKey(div,bu4,"Overview"), month, res, denom);
-        add(makeRosterKey(div,bu4,bu5), month, res, denom);
+        add(makeRosterKey("Overview","Overview","Overview"), month, res, denomRaw);
+        add(makeRosterKey(div,"Overview","Overview"), month, res, denomRaw);
+        add(makeRosterKey(div,"Overview",bu5), month, res, denomRaw);
+        add(makeRosterKey(div,bu4,"Overview"), month, res, denomRaw);
+        add(makeRosterKey(div,bu4,bu5), month, res, denomRaw);
       });
 
       const months = Array.from(monthSet).sort(naturalSort);
 
       function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
+      function effectiveDenom(a){
+        if (!a) return 0;
+
+        // If denom looks like per-row headcount weights (0/1), summing is correct.
+        if (a.denomMax <= 2){
+          return (a.denomSum > 0) ? a.denomSum : a.n;
+        }
+
+        // denom values > 2 usually represent an already-aggregated headcount number.
+        // If the file is employee-level (resignation_cnt is 0/1), using row count
+        // is the safest way to avoid double-counting repeated denominators.
+        if (a.resMax <= 1){
+          return a.n;
+        }
+
+        // Aggregated rows (counts > 1): use provided denominators.
+        return (a.denomSum > 0) ? a.denomSum : a.denomMax;
+      }
+
       function seriesFor(key, which){
         const mm = agg.get(key) || new Map();
         const years = months.slice();
         const values = years.map(m=>{
           const a = mm.get(m);
-          if (!a || !a.denom) return null;
-          const resRate = a.res / a.denom; // fraction (0-1)
+          const denom = effectiveDenom(a);
+          if (!a || !denom) return null;
+          const resRate = a.res / denom; // fraction (0-1)
           if (which === "res") return clamp01(resRate);
           // Overall attrition: derived from resignation rate (keeps file schema minimal)
           return clamp01(resRate * 1.25);
@@ -3102,23 +3243,31 @@ function genRandomData(){
   scheduleSave("generated");
 }
 
-
     function updateScopeTitle(){
       if (!scopeTitleEl) return;
 
       const d = (model.currentDivision || "Overview");
       const f = (d === "Overview") ? "Overview" : (model.currentFunction || "Overview");
-      const s = (d === "Overview" || f === "Overview") ? "Overview" : (model.currentSubFunction || "Overview");
+      const s = (d === "Overview") ? "Overview" : (model.currentSubFunction || "Overview");
 
-      // Build "Division -- Function -- Sub Function", but avoid repeating "Overview"
-      const parts = [d, f, s];
-
-      // Remove consecutive duplicates (e.g., Overview -- Overview)
-      const compact = [];
-      for (const p of parts){
-        if (compact.length && compact[compact.length-1] === p) continue;
-        compact.push(p);
+      // Title reflects the active filter path:
+      //  - Overview
+      //  - Division -- Overview
+      //  - Division -- BU4
+      //  - Division -- BU4 -- BU5
+      //  - Division -- BU5 (when BU4 is Overview but BU5 is selected)
+      let parts = [];
+      if (d === "Overview"){
+        parts = ["Overview"];
+      } else {
+        parts.push(d);
+        if (f && f !== "Overview") parts.push(f);
+        if (s && s !== "Overview") parts.push(s);
+        if (parts.length === 1 && f === "Overview" && s === "Overview") parts.push("Overview");
       }
+
+      scopeTitleEl.textContent = parts.join(" -- ");
+    }
 
       // If multiple Overviews exist, keep only one "Overview"
       const overviewCount = compact.filter(x => x === "Overview").length;
@@ -3372,7 +3521,7 @@ function renderAll(){
       makeLineChart("chartPopulation","Population",years,pop,(v)=>fmtInt(v));
       makeLineChart("chartYOS","Avg Years of Service",years,yos,(v)=>`${fmt1(v)} yrs`);
       makeLineChart("chartTIG","Avg Time in Grade",years,tig,(v)=>`${fmt1(v)} yrs`);
-      makeLineChart("chartRetire","Likely to Retire Rate",years,retRateSeries,(v)=>`${Number(v).toFixed(1)}%`);
+      makeLineChart("chartRetire","Likely to Retire Rate",years,retRateSeries,(v)=>`${fmtPctSmart(v)}`);
 
       // Year-over-year (last 12 months) section (within effective window)
       const yoyMonths = Math.min(12, years.length);
@@ -3397,24 +3546,24 @@ function renderAll(){
       // Overall Attrition
       const oaLatest = lastNumber(oa);
       const oaStart = firstNumber(oa) ?? oaLatest;
-      document.getElementById("oaValue").textContent = (oaLatest == null) ? "—" : `${Number(oaLatest).toFixed(1)}%`;
+      document.getElementById("oaValue").textContent = (oaLatest == null) ? "—" : `${fmtPctSmart(oaLatest)}`;
       deltaPill(document.getElementById("oaDelta"), (oaLatest ?? 0) - (oaStart ?? 0), false, "%");
       const oaAvg = avgNonNull(oa);
-      document.getElementById("oaAvg").textContent = (oaAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${oaAvg.toFixed(1)}%`;
+      document.getElementById("oaAvg").textContent = (oaAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${fmtPctSmart(oaAvg)}`;
       const oaMed = median(oa);
-      document.getElementById("oaMed").textContent = (oaMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${Number(oaMed).toFixed(1)}%`;
-      makeLineChart12m("chartOverallAttrition","Overall Attrition",yoyYears,oa,(v)=>`${Number(v).toFixed(1)}%`);
+      document.getElementById("oaMed").textContent = (oaMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${fmtPctSmart(oaMed)}`;
+      makeLineChart12m("chartOverallAttrition","Overall Attrition",yoyYears,oa,(v)=>`${fmtPctSmart(v)}`);
 
       // Resignation Attrition
       const raLatest = lastNumber(ra);
       const raStart = firstNumber(ra) ?? raLatest;
-      document.getElementById("raValue").textContent = (raLatest == null) ? "—" : `${Number(raLatest).toFixed(1)}%`;
+      document.getElementById("raValue").textContent = (raLatest == null) ? "—" : `${fmtPctSmart(raLatest)}`;
       deltaPill(document.getElementById("raDelta"), (raLatest ?? 0) - (raStart ?? 0), false, "%");
       const raAvg = avgNonNull(ra);
-      document.getElementById("raAvg").textContent = (raAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${raAvg.toFixed(1)}%`;
+      document.getElementById("raAvg").textContent = (raAvg == null) ? `Avg (${yoySpan}) —` : `Avg (${yoySpan}) ${fmtPctSmart(raAvg)}`;
       const raMed = median(ra);
-      document.getElementById("raMed").textContent = (raMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${Number(raMed).toFixed(1)}%`;
-      makeLineChart12m("chartResignationAttrition","Resignation Attrition",yoyYears,ra,(v)=>`${Number(v).toFixed(1)}%`);
+      document.getElementById("raMed").textContent = (raMed == null) ? `Median (${yoySpan}) —` : `Median (${yoySpan}) ${fmtPctSmart(raMed)}`;
+      makeLineChart12m("chartResignationAttrition","Resignation Attrition",yoyYears,ra,(v)=>`${fmtPctSmart(v)}`);
 
       // Promotions
       const prLatest = lastNumber(pr);
@@ -3608,6 +3757,8 @@ document.getElementById("fileInput").addEventListener("change", async (e)=>{
 
     
     (async function init(){
+      const deps = await ensureDeps();
+      warnIfMissingDeps(deps);
       applyTaxonomyLabels();
 
       // Restore last saved data first (persists across page closes)

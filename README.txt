@@ -1,0 +1,1 @@
+Updated: attrition KPI math fixed (prevents double-counting denominators on employee-level rows) + smart % formatting.
